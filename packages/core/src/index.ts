@@ -7,3 +7,5 @@ export * from './png.js';
 export * from './materials.js';
 export * from './animation.js';
 export * from './render.js';
+export * from './quality.js';
+export * from './skins.js';

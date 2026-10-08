@@ -101,6 +101,15 @@ test('bundled bridge validates before project creation and cleans up action', ()
   assert.equal(cubes.length, 1);
   assert.equal(groups.length, 1);
   assert.equal(context.Project.name, 'x');
+  form = {
+    source:
+      'model assembly skin metal metal "#967b49" "#e1c181" seed 6 component plate { cube c [-1,0,-1] [2,3,2] surface metal } use plate a at [3,0,0] use plate b at [-3,0,0]',
+  };
+  dialog.onButton(0);
+  assert.equal(projects, 2);
+  assert.equal(models.at(-1).elements.length, 2);
+  assert.equal(models.at(-1).textures.length, 1);
+  assert.ok(models.at(-1).textures[0].source.startsWith('data:image/png;base64,'));
   plugin.onunload();
   assert.equal(deleted, true);
 });

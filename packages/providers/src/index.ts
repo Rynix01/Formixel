@@ -7,19 +7,82 @@ export interface GenerationRequest {
   prompt: string;
   model?: string;
   timeoutMs?: number;
+  onUsage?: (usage: TokenUsage | null) => void;
+}
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number | null;
+  reasoningOutputTokens: number | null;
 }
 export interface Provider {
   name: ProviderName;
   generate(request: GenerationRequest): Promise<string>;
 }
-export const SYSTEM_PROMPT = `You are Formixel's model planner. Return ONLY a valid FXL document without markdown. No tools, files, commands or code execution. Syntax:
+export const SYSTEM_PROMPT = `Return ONLY valid compact FXL; no markdown/tools/commands. Generic Blockbench cuboids, no meshes/expressions.
 model "name"
-texture 64 64
-group torso origin [0,0,0] rotate [0,0,0] {
- cube body [-4,0,-2] [8,12,4] origin [0,0,0] rotate [0,0,0] color 2
+Root declarations (before use): material m "#hex"; pattern p 8 8 "#hex" "#hex"; skin s stone "#45545a" "#94a899" seed 7. Skin kinds: bark,stone,metal,cloth,leaf,rune; local deterministic pixels, not painted art. Semicolons here separate examples; NEVER emit semicolons.
+cube id [fromX,Y,Z] [positiveSizeX,Y,Z] optional clauses IN ORDER: origin [X,Y,Z] rotate [X,Y,Z] color 0..7 material m surface s. Omit unused clauses. Names begin letter/underscore, then letters/digits/_.-.
+group id origin [pivotX,Y,Z] rotate [degreesX,Y,Z] { cubes/groups/use/macros }. Coordinates and pivots are ABSOLUTE even in groups; pivots don't translate children.
+Reuse repeated structures: component plate { cube slab [-2,0,-1] [4,5,2] surface s } then use plate left at [5,10,0] scale [1,1,1] rotate [0,0,-10]. Instance creates a group; its children use component LOCAL coordinates. Components are root-only, ordered, no recursive/forward references. Use uniform positive scale. Child IDs: left/slab (or parent/left/slab).
+mirror x { ... } duplicates across axis 0; repeat 3 offset [0,2,0] { ... } expands copies. Macros change IDs: avoid animation targets inside macros.
+animation idle 2 loop { rotate "torso/head" 0 [0,-5,0] rotate "torso/head" 1 [0,5,0] rotate "torso/head" 2 [0,-5,0] }. Also move/scale; loop or once; optional step; times strictly increase per track within length. Targets must exist.
+Budgets: 10000 cubes,1000 groups,depth32,100 components,32 textures. Use components/mirror/repeat instead of spelling out duplicates; never output pixel arrays or bbmodel JSON.`;
+export const DESIGN_GUIDANCE = `Design for the requested style: strong silhouette, coherent proportions, grounded feet and exposed joints. RPG bosses need a focal face/core/weapon, broad shoulders, tapered limbs and a deliberate stance. Balance large/medium/small forms; use restrained colours and sparse accents. Avoid checker noise and tiny decoration everywhere. Verify attachment points and animation IDs. Syntax validity is not visual quality.`;
+export const PLANNER_INSTRUCTIONS = `${SYSTEM_PROMPT}\n${DESIGN_GUIDANCE}`;
+const counter = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : null;
+export function tokenUsage(
+  input: unknown,
+  output: unknown,
+  cached: unknown,
+  reasoning: unknown,
+): TokenUsage | null {
+  const i = counter(input),
+    o = counter(output),
+    c = counter(cached),
+    r = counter(reasoning);
+  return i === null || o === null
+    ? null
+    : { inputTokens: i, outputTokens: o, cachedInputTokens: c, reasoningOutputTokens: r };
 }
-cube foot [-4,-4,-2] [4,4,4] color 2
-Cube vectors are from and positive SIZE, not to. Groups can nest. Optional clauses must occur in order origin, rotate, color. Group clauses origin then rotate. Identifiers: letters, digits, underscore, dot or hyphen; start with letter or underscore. IDs are hierarchical and unique. Color is integer 0..7. Additional statements: material green "#517f38"; pattern moss 8 8 "#517f38" "#638848". Cube clauses after color: material green or surface moss. mirror x { cube arm [2,0,-1] [2,8,2] } duplicates geometry across axis zero. repeat 3 offset [0,2,0] { cube ridge [0,0,0] [1,1,1] } expands bounded copies. animation idle 2 loop { rotate "torso" 0 [0,0,0] rotate "torso" 1 [0,10,0] rotate "torso" 2 [0,0,0] }. Animation channels rotate/move/scale refer to quoted hierarchical group IDs; keyframe times must strictly increase per track and be within length. Animation optional step clause holds that frame until the next. Declare materials/patterns before cubes. Keep geometry within 10000 cubes, 1000 groups, depth 32. Format is generic Blockbench free cuboids. Numeric bone animations and embedded checker textures are supported. No meshes or expressions. Honor the user's request within these constraints.`;
+export function parseCodexEvents(text: string): { source: string; usage: TokenUsage | null } {
+  let source = '',
+    usage: TokenUsage | null = null,
+    completed = false;
+  for (const line of text.split(/\r?\n/).filter((s) => s.trim())) {
+    let event: any;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      throw new Error('Malformed provider event stream');
+    }
+    if (!event || typeof event.type !== 'string') throw new Error('Malformed provider event');
+    if (completed) throw new Error('Unexpected event after provider completion');
+    if (event.type === 'turn.failed' || event.type === 'error')
+      throw new Error('Provider generation failed');
+    if (event.type === 'item.completed' && event.item?.type === 'agent_message') {
+      if (typeof event.item.text !== 'string') throw new Error('Invalid provider message');
+      source = event.item.text;
+    }
+    if (
+      ['command_execution', 'file_change', 'mcp_tool_call', 'web_search'].includes(event.item?.type)
+    )
+      throw new Error('Provider attempted a disallowed tool');
+    if (event.type === 'turn.completed') {
+      if (completed) throw new Error('Unexpected additional provider turn');
+      completed = true;
+      usage = tokenUsage(
+        event.usage?.input_tokens,
+        event.usage?.output_tokens,
+        event.usage?.cached_input_tokens,
+        event.usage?.reasoning_output_tokens,
+      );
+    }
+  }
+  if (!completed || !source.trim()) throw new Error('Provider returned no completed model');
+  return { source, usage };
+}
 const MAX_OUTPUT = 2_000_000;
 export function cliArguments(name: 'codex' | 'claude-code', model?: string): string[] {
   if (model && (model.startsWith('-') || model.length > 128))
@@ -49,6 +112,7 @@ export function cliArguments(name: 'codex' | 'claude-code', model?: string): str
       'web_search="disabled"',
       '--color',
       'never',
+      '--json',
       ...(model ? ['--model', model] : []),
       '-',
     ];
@@ -151,14 +215,32 @@ function timeout(request: GenerationRequest): number {
     throw new Error('Timeout must be 100..600000 ms');
   return n;
 }
+export function validateGenerationRequest(name: ProviderName, request: GenerationRequest): void {
+  if (
+    typeof request.prompt !== 'string' ||
+    !request.prompt.trim() ||
+    Buffer.byteLength(request.prompt) > 32_000
+  )
+    throw new Error('Prompt must be 1..32000 bytes');
+  timeout(request);
+  if (
+    request.model !== undefined &&
+    (typeof request.model !== 'string' ||
+      !request.model ||
+      request.model.startsWith('-') ||
+      request.model.length > 128)
+  )
+    throw new Error('Invalid model identifier');
+  if ((name === 'openai' || name === 'anthropic') && !request.model)
+    throw new Error('API providers require an explicit model');
+}
 export function createProvider(name: ProviderName): Provider {
   if (!['codex', 'claude-code', 'openai', 'anthropic'].includes(name))
     throw new Error('Unknown provider');
   return {
     name,
     async generate(request) {
-      if (!request.prompt.trim() || Buffer.byteLength(request.prompt) > 32_000)
-        throw new Error('Prompt must be 1..32000 bytes');
+      validateGenerationRequest(name, request);
       const duration = timeout(request);
       if (name === 'codex' || name === 'claude-code') {
         const cwd = await mkdtemp(join(tmpdir(), 'formixel-provider-'));
@@ -167,13 +249,16 @@ export function createProvider(name: ProviderName): Provider {
             join(cwd, 'AGENTS.md'),
             'Only return FXL text. Never use tools or execute commands.',
           );
-          return await runProcess(
+          const text = await runProcess(
             name === 'codex' ? 'codex' : 'claude',
             cliArguments(name, request.model),
-            `${SYSTEM_PROMPT}\n\nUser request:\n${request.prompt}`,
+            `${PLANNER_INSTRUCTIONS}\n\nUser request:\n${request.prompt}`,
             cwd,
             duration,
           );
+          const result = name === 'codex' ? parseCodexEvents(text) : { source: text, usage: null };
+          request.onUsage?.(result.usage);
+          return result.source;
         } finally {
           await rm(cwd, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
         }
@@ -197,14 +282,14 @@ export function createProvider(name: ProviderName): Provider {
         name === 'openai'
           ? {
               model: request.model,
-              instructions: SYSTEM_PROMPT,
+              instructions: PLANNER_INSTRUCTIONS,
               input: request.prompt,
               max_output_tokens: 8192,
               store: false,
             }
           : {
               model: request.model,
-              system: SYSTEM_PROMPT,
+              system: PLANNER_INSTRUCTIONS,
               messages: [{ role: 'user', content: request.prompt }],
               max_tokens: 8192,
             };
@@ -250,6 +335,16 @@ export function createProvider(name: ProviderName): Provider {
               .map((c: any) => c.text)
               .join('\n');
       if (!text.trim()) throw new Error('Provider returned no model text');
+      request.onUsage?.(
+        tokenUsage(
+          data.usage?.input_tokens,
+          data.usage?.output_tokens,
+          name === 'openai'
+            ? data.usage?.input_tokens_details?.cached_tokens
+            : data.usage?.cache_read_input_tokens,
+          name === 'openai' ? data.usage?.output_tokens_details?.reasoning_tokens : undefined,
+        ),
+      );
       return text;
     },
   };

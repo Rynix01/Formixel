@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { readFile, writeFile, rename, link, unlink, stat } from 'node:fs/promises';
+import { readFile, writeFile, rename, link, unlink, stat, mkdir } from 'node:fs/promises';
 import { resolve, extname, dirname, basename, join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import {
   parseFXL,
@@ -17,9 +17,18 @@ import {
   canonical,
   renderPNG,
   encodePNG,
+  analyzeQuality,
+  type RenderView,
   type Model,
 } from '@formixel/core';
-import { createProvider, diagnoseProvider, type ProviderName } from '@formixel/providers';
+import {
+  createProvider,
+  diagnoseProvider,
+  validateGenerationRequest,
+  PLANNER_INSTRUCTIONS,
+  type TokenUsage,
+  type ProviderName,
+} from '@formixel/providers';
 export async function readBounded(path: string): Promise<string> {
   const s = await stat(path);
   if (!s.isFile() || s.size > 16_000_000) throw new Error('Input must be a file up to 16 MB');
@@ -48,18 +57,19 @@ export async function atomicWrite(
     await unlink(temp).catch(() => {});
   }
 }
-const help = `Formixel 1.0 — deterministic model compiler
+const help = `Formixel 1.1 — deterministic model compiler
 Usage: formixel <command> <input> [options]
   build model.fxl -o model.bbmodel
   import model.bbmodel -o model.bbir.json
   export model.bbir.json -o model.bbmodel
   inspect model.fxl
+  quality model.bbmodel
   validate model.fxl
   patch model.fxl --patch changes.json -o model.bbir.json
-  render model.fxl -o preview.png [--size 512] [--animation idle --time 0.5]
+  render model.fxl -o preview.png [--size 512] [--view front] [--animation idle --time 0.5]
   render model.fxl --texture moss -o texture.png
   doctor [codex|claude-code|openai|anthropic]
-  generate "description" --provider codex -o model.fxl [--model NAME]
+  generate "description" --provider codex -o model.fxl [--model NAME] [--cache DIR]
   run formixel.task.json -o model.fxl
 Options: --force to overwrite an existing output; --timeout MS for generation.
 Providers: codex (default), claude-code, openai, anthropic.
@@ -71,7 +81,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     return;
   }
   if (argv[0] === '--version') {
-    console.log('1.0.0');
+    console.log('1.1.0');
     return;
   }
   const command = argv.shift()!;
@@ -92,6 +102,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       'import',
       'export',
       'inspect',
+      'quality',
       'validate',
       'patch',
       'render',
@@ -120,6 +131,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         '--animation',
         '--time',
         '--texture',
+        '--view',
+        '--cache',
       ].includes(flag) ||
       !argv.length
     )
@@ -131,13 +144,14 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const allowed = new Set([
     '--output',
     ...(command === 'patch' ? ['--patch'] : []),
-    ...(command === 'generate' ? ['--provider', '--model', '--timeout'] : []),
-    ...(command === 'render' ? ['--size', '--animation', '--time', '--texture'] : []),
+    ...(command === 'generate' ? ['--provider', '--model', '--timeout', '--cache'] : []),
+    ...(command === 'run' ? ['--cache'] : []),
+    ...(command === 'render' ? ['--size', '--animation', '--time', '--texture', '--view'] : []),
   ]);
   for (const key of options.keys())
     if (!allowed.has(key)) throw new Error(`Option ${key} is not valid for ${command}`);
   const output = options.get('--output');
-  if (!['inspect', 'validate'].includes(command) && !output)
+  if (!['inspect', 'validate', 'quality'].includes(command) && !output)
     throw new Error('Specify output with -o');
   if (output && !force) {
     try {
@@ -149,6 +163,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   let model: Model;
   let text: string;
+  let generation:
+    | {
+        provider: string;
+        cacheHit: boolean;
+        requests: number;
+        usage: TokenUsage | null;
+        sourceBytes: number;
+      }
+    | undefined;
   if (command === 'generate' || command === 'run') {
     let request = {
       prompt: input,
@@ -178,14 +201,74 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       providerName = task.provider;
     }
     const provider = createProvider(providerName as ProviderName);
-    text = await provider.generate(request);
+    validateGenerationRequest(provider.name, request);
+    if (options.has('--cache') && !options.get('--cache')!.trim())
+      throw new Error('Cache directory must not be empty');
+    const cacheDir = options.has('--cache') ? resolve(options.get('--cache')!) : undefined;
+    const cacheKey = createHash('sha256')
+      .update(
+        JSON.stringify([
+          1,
+          providerName,
+          request.model ?? null,
+          PLANNER_INSTRUCTIONS,
+          request.prompt,
+        ]),
+      )
+      .digest('hex');
+    const cacheFile = cacheDir ? join(cacheDir, `${cacheKey}.json`) : undefined;
+    if (cacheFile === resolve(output!)) throw new Error('Output must differ from cache entry');
+    let cached: string | undefined;
+    if (cacheFile) {
+      try {
+        const entry = JSON.parse(await readBounded(cacheFile));
+        if (
+          !entry ||
+          entry.version !== 1 ||
+          typeof entry.source !== 'string' ||
+          Object.keys(entry).some((k) => !['version', 'source'].includes(k))
+        )
+          throw new Error('Invalid cache entry');
+        if (!parseFXL(entry.source).cubes.length)
+          throw new Error('Generated model has no geometry');
+        cached = entry.source;
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+      }
+    }
+    let usage: TokenUsage | null = null;
+    text =
+      cached ??
+      (await provider.generate({
+        ...request,
+        onUsage: (value) => {
+          usage = value;
+        },
+      }));
     model = parseFXL(text); // Never persist invalid provider output.
+    if (!model.cubes.length) throw new Error('Generated model has no geometry');
+    if (cacheFile && cached === undefined) {
+      await mkdir(cacheDir!, { recursive: true });
+      try {
+        await atomicWrite(cacheFile, JSON.stringify({ version: 1, source: text }));
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      }
+    }
+    generation = {
+      provider: providerName,
+      cacheHit: cached !== undefined,
+      requests: cached === undefined ? 1 : 0,
+      usage,
+      sourceBytes: Buffer.byteLength(text),
+    };
   } else {
     text = await readBounded(input);
     model = loadText(text, extname(input).toLowerCase());
   }
   let result: string | Uint8Array;
   if (command === 'inspect') result = JSON.stringify(inspect(model), null, 2) + '\n';
+  else if (command === 'quality') result = JSON.stringify(analyzeQuality(model), null, 2) + '\n';
   else if (command === 'validate')
     result =
       JSON.stringify(
@@ -197,7 +280,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     if (options.has('--time') && !options.has('--animation'))
       throw new Error('--time requires --animation');
     if (options.has('--texture')) {
-      if (['--size', '--animation', '--time'].some((k) => options.has(k)))
+      if (['--size', '--animation', '--time', '--view'].some((k) => options.has(k)))
         throw new Error('Texture export cannot be combined with preview options');
       const texture = model.textures?.find((t) => t.id === options.get('--texture'));
       if (!texture) throw new Error('Unknown texture');
@@ -211,12 +294,18 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       result = renderPNG(model, {
         width: size,
         height: size,
+        ...(options.has('--view') ? { view: options.get('--view') as RenderView } : {}),
         ...(options.has('--animation')
           ? { animation: options.get('--animation')!, time: Number(options.get('--time') ?? 0) }
           : {}),
       });
     } else {
-      if (options.has('--animation') || options.has('--time') || options.has('--size'))
+      if (
+        options.has('--animation') ||
+        options.has('--time') ||
+        options.has('--size') ||
+        options.has('--view')
+      )
         throw new Error('Animation and size options require PNG output');
       result = renderSVG(model);
     }
@@ -230,7 +319,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   else result = serialize(model);
   if (output) {
     await atomicWrite(resolve(output), result, force);
-    console.log(JSON.stringify({ output: resolve(output), ...inspect(model) }));
+    console.log(
+      JSON.stringify({
+        output: resolve(output),
+        ...inspect(model),
+        ...(generation ? { generation } : {}),
+      }),
+    );
   } else process.stdout.write(result);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)

@@ -29,6 +29,11 @@ test('usable local pipeline with overwrite protection and atomic failure', async
       1,
     );
     assert.equal(run(['inspect', ir, '--provider', 'codex']).status, 1);
+    assert.equal(run(['quality', ir]).status, 0);
+    assert.equal(run(['render', ir, '--view', 'front', '-o', join(dir, 'front.png')]).status, 0);
+    assert.equal(run(['render', ir, '--view', 'front', '-o', join(dir, 'front.svg')]).status, 1);
+    assert.equal(run(['render', ir, '--view', 'unknown', '-o', join(dir, 'bad.png')]).status, 1);
+    assert.equal(run(['render', ir, '--cache', dir, '-o', join(dir, 'bad-cache.png')]).status, 1);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

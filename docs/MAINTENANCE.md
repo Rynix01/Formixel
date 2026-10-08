@@ -8,22 +8,25 @@ Read README.md, ARCHITECTURE.md, SECURITY.md, FXL.md and ASSETS.md. Install with
 
 ## Implementation map
 
-| Module              | Responsibility                                                  |
-| ------------------- | --------------------------------------------------------------- |
-| core/model.ts       | BBIR validation, resource budgets and canonicalization          |
-| core/dsl.ts         | Token scanner, bounded geometry macros and animation grammar    |
-| core/geometry.ts    | Hierarchical transforms, bounds and SVG preview                 |
-| core/materials.ts   | Swatches, textures and deterministic baking                     |
-| core/png.ts         | Bounded static PNG codec, CRC and filter handling               |
-| core/animation.ts   | Numeric linear/step bone sampling                               |
-| core/render.ts      | Textured cutout rasterizer and depth/work budgets               |
-| core/bbmodel.ts     | Stable UUIDs, generic native codec and legacy axis migration    |
-| core/patch.ts       | Transactional geometry edits                                    |
-| providers/index.ts  | Fixed argv/origins, stdin transport, process cleanup and doctor |
-| cli/index.ts        | Commands, bounded input and atomic outputs                      |
-| mcp/index.ts        | Compact local stdio adapter                                     |
-| blockbench/index.ts | Shared compiler and native codec bridge                         |
-| scripts/release.mjs | Standalone bundles, licenses and deterministic archives         |
+| Module                | Responsibility                                                  |
+| --------------------- | --------------------------------------------------------------- |
+| core/model.ts         | BBIR validation, resource budgets and canonicalization          |
+| core/dsl.ts           | Token scanner, bounded geometry macros and animation grammar    |
+| core/geometry.ts      | Hierarchical transforms, bounds and SVG preview                 |
+| core/materials.ts     | Swatches, textures and deterministic baking                     |
+| core/skins.ts         | Six fixed seeded local RGBA surface recipes                     |
+| core/quality.ts       | Technical UV coverage and coincident geometry diagnostics       |
+| core/png.ts           | Bounded static PNG codec, CRC and filter handling               |
+| core/animation.ts     | Numeric linear/step bone sampling                               |
+| core/render.ts        | Textured cutout rasterizer and depth/work budgets               |
+| core/bbmodel.ts       | Stable UUIDs, generic native codec and legacy axis migration    |
+| core/patch.ts         | Transactional geometry edits                                    |
+| providers/index.ts    | Fixed argv/origins, stdin transport, process cleanup and doctor |
+| cli/index.ts          | Commands, bounded input and atomic outputs                      |
+| mcp/index.ts          | Compact local stdio adapter                                     |
+| blockbench/index.ts   | Shared compiler and native codec bridge                         |
+| scripts/release.mjs   | Standalone bundles, licenses and deterministic archives         |
+| scripts/benchmark.mjs | Equivalent compact/expanded FXL source comparison               |
 
 Package module paths are relative to packages/*/src.
 
@@ -38,6 +41,10 @@ Material baking must preserve custom UVs. PNG support is static, noninterlaced R
 Provider output is untrusted. Keep shell:false, fixed executables and argument lists, temporary working directories, bounded output and process-tree cancellation. Do not add permission bypasses, executable configuration or automatic API fallback. Wait for process close before temporary cleanup.
 
 Default outputs use exclusive temporary files and atomic hard links. Explicit --force uses rename. Preserve overwrite protection and input/resource budgets.
+
+Component definitions store geometry; instances create wrapper groups and preserve prototype UVs. Keep uniform-scale semantics, ordered references and both stored/expanded budgets. Tests must cover actual transforms and native roundtrip, not just instance counts.
+
+Usage counters come from completed provider envelopes/events. Missing counts remain null. The CLI source cache is optional, keyed by provider/model/prompt/instructions and revalidated before use. Cache records contain no prompts/transcripts; do not add automatic paid retries on corruption. Test count of actual transport invocations and failed-write behavior.
 
 ## Validation and extension points
 

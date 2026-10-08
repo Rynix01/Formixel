@@ -9,7 +9,10 @@ export interface RenderOptions {
   animation?: string;
   time?: number;
   background?: string;
+  view?: RenderView;
 }
+export const RENDER_VIEWS = ['isometric', 'front', 'back', 'left', 'right', 'top'] as const;
+export type RenderView = (typeof RENDER_VIEWS)[number];
 const faceIndices: Record<FaceName, number[]> = {
   west: [0, 4, 6, 2],
   east: [1, 3, 7, 5],
@@ -48,11 +51,33 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
   const mesh = geometry(model, poses);
   const textures = new Map((model.textures ?? []).map((t) => [t.id, t]));
   const cubes = new Map(model.cubes.map((c) => [c.id, c]));
-  const project = (p: Vec3): Vec3 => [
-    ((p[0] + p[2]) * Math.sqrt(3)) / 2,
-    (p[0] - p[2]) / 2 - p[1],
-    p[0] + p[1] - p[2],
-  ];
+  const view = options.view ?? 'isometric';
+  if (!RENDER_VIEWS.includes(view)) throw new Error('Unknown render view');
+  const directions: Record<RenderView, Vec3> = {
+    isometric: [1, 1, -1],
+    front: [0, 0, -1],
+    back: [0, 0, 1],
+    left: [-1, 0, 0],
+    right: [1, 0, 0],
+    top: [0, 1, 0],
+  };
+  const direction = directions[view];
+  const project = (p: Vec3): Vec3 => {
+    switch (view) {
+      case 'front':
+        return [p[0], -p[1], -p[2]];
+      case 'back':
+        return [-p[0], -p[1], p[2]];
+      case 'left':
+        return [-p[2], -p[1], -p[0]];
+      case 'right':
+        return [p[2], -p[1], p[0]];
+      case 'top':
+        return [p[0], p[2], p[1]];
+      default:
+        return [((p[0] + p[2]) * Math.sqrt(3)) / 2, (p[0] - p[2]) / 2 - p[1], p[0] + p[1] - p[2]];
+    }
+  };
   const all = mesh.flatMap((c) => c.vertices.map(project));
   const minX = all.reduce((n, p) => Math.min(n, p[0]), Infinity),
     maxX = all.reduce((n, p) => Math.max(n, p[0]), -Infinity),
@@ -84,7 +109,7 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
       ];
-      if (normal[0] + normal[1] - normal[2] <= 0) continue;
+      if (normal.reduce((sum, v, i) => sum + v * direction[i]!, 0) <= 0) continue;
       const shade =
         0.65 +
         0.35 *

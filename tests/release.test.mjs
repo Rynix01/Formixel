@@ -50,6 +50,14 @@ test('release archive runs standalone outside checkout with verified hashes', as
     assert.equal(image.width, 512);
     run(['import', 'golem.bbmodel', '-o', 'golem.bbir.json']);
     run(['validate', 'golem.bbir.json']);
+    run(['build', 'examples/ironroot_knight.fxl', '-o', 'knight.bbmodel']);
+    assert.equal(
+      JSON.parse(await readFile(join(root, 'knight.bbmodel'), 'utf8')).elements.length,
+      85,
+    );
+    assert.deepEqual(JSON.parse(run(['quality', 'knight.bbmodel'])).issues, []);
+    run(['render', 'knight.bbmodel', '--view', 'front', '-o', 'knight-front.png']);
+    assert.equal(PNG.sync.read(await readFile(join(root, 'knight-front.png'))).width, 512);
     const doctor = JSON.parse(run(['doctor', 'openai']));
     assert.equal(doctor.providers[0].liveTest, false);
     const rpc = spawnSync(process.execPath, ['formixel-mcp.mjs'], {

@@ -1,0 +1,97 @@
+model "ironroot_knight"
+skin stone stone "#354e50" "#7e9489" seed 19
+skin bark bark "#362d25" "#806449" seed 4
+skin brass metal "#967b49" "#e1c181" seed 6
+skin cloak cloth "#263d36" "#55705b" seed 3
+material glow "#9ef1d1"
+material amber "#f7be63"
+material dark "#171e1c"
+
+component foot {
+  cube sole [-3,0,-4] [6,1,8] material dark
+  cube plate [-2.8,1,-3.8] [5.6,2.6,7.5] surface stone
+  cube toe [-2.7,1,-4.3] [5.4,1,1.2] surface brass
+  cube cuff [-2.2,3.6,-1.8] [4.4,1,3.6] surface brass
+}
+component shin {
+  cube wood [-1.6,0,-1.6] [3.2,8,3.2] surface bark
+  cube greave [-2,1,-2] [4,6.4,1] surface stone
+  cube trim [-1.8,1.4,-2.3] [3.6,.6,.5] surface brass
+  cube knee [-2.3,7,-2] [4.6,2.4,2.5] surface stone
+}
+component arm {
+  cube tendon [-1.5,-5,-1.5] [3,6,3] surface bark
+  cube armor [-2,-4,-2] [4,4.5,4] surface stone
+  cube band [-2.1,-4,-2.1] [4.2,.7,4.2] surface brass
+  cube ridge [-.5,-3.1,-2.5] [1,3,.6] surface brass
+}
+component finger {
+  cube base [-.45,-1,-.5] [.9,1.8,1] surface brass
+  cube tip [-.4,-2,-.6] [.8,1.1,1.1] surface bark
+}
+component hand {
+  cube palm [-1.7,-2,-1.2] [3.4,2.5,2.4] surface bark
+  cube gauntlet [-1.8,-.8,-1.4] [3.6,1.6,2.8] surface stone
+  use finger a at [-1.05,-1.6,-1.15]
+  use finger b at [0,-1.6,-1.15]
+  use finger c at [1.05,-1.6,-1.15]
+}
+component shoulder {
+  cube block [-3,-1,-2.8] [6,3.5,5.6] surface stone
+  cube cap [-3.4,1,-3.1] [6.8,1.1,6.2] surface brass
+  cube crest [-2,2,-2] [4,1.5,4] surface stone
+  cube rim [-3.3,-1,-3.2] [6.6,.7,.7] surface brass
+  cube rivet [-.55,.25,-3.1] [1.1,1.1,.6] material amber
+}
+component horn {
+  cube root [-.9,0,-.8] [1.8,3.2,1.6] surface brass
+  cube middle [-.6,3,-.6] [1.2,2.7,1.2] surface bark
+  cube point [-.3,5.5,-.3] [.6,1.8,.6] material amber
+}
+use foot left_foot at [-4.8,0,0] rotate [0,-8,0]
+use foot right_foot at [4.8,0,1] rotate [0,10,0]
+use shin left_shin at [-4.8,3.5,0] rotate [0,0,4]
+use shin right_shin at [4.8,3.5,1] rotate [0,0,-4]
+group body origin [0,16,0] {
+  cube hip [-5.6,11,-2.5] [11.2,4.4,5] surface bark
+  cube belt [-5.8,14,-2.7] [11.6,1.3,5.4] surface brass
+  cube waist [-3.8,15,-2.3] [7.6,6,4.6] surface bark
+  cube chest [-6.2,19,-3.4] [12.4,8.4,6.8] surface stone
+  cube collar [-5,26,-3] [10,1.6,6] surface brass
+  cube breast_left [-5.3,21,-4] [4.1,4.5,1] origin [-3.2,23,0] rotate [0,0,-7] surface stone
+  cube breast_right [1.2,21,-4] [4.1,4.5,1] origin [3.2,23,0] rotate [0,0,7] surface stone
+  cube sigil_frame [-1.5,21.5,-4.5] [3,3,.9] origin [0,23,0] rotate [0,0,45] surface brass
+  cube sigil [-.85,22.1,-4.9] [1.7,1.7,.6] origin [0,23,0] rotate [0,0,45] material glow
+  cube cloak_left [-5,16,3.5] [4.4,10,.7] origin [-3,24,3.5] rotate [-8,0,5] surface cloak
+  cube cloak_right [.6,16,3.5] [4.4,10,.7] origin [3,24,3.5] rotate [-8,0,-5] surface cloak
+  cube neck [-1.8,27,-1.8] [3.6,3,3.6] surface bark
+  use shoulder left_shoulder at [-8,26,0] rotate [0,0,12]
+  use shoulder right_shoulder at [8,26,0] rotate [0,0,-12]
+  use arm left_upper at [-8,23,0] rotate [0,0,-12]
+  use arm right_upper at [8,23,0] rotate [0,0,12]
+  use arm left_lower at [-9.1,17.5,-.4] rotate [-12,0,4]
+  use arm right_lower at [9.1,17.5,-.4] rotate [-12,0,-4]
+  use hand left_hand at [-8.8,12,-1]
+  use hand right_hand at [8.8,12,-1]
+  group head origin [0,29,0] rotate [0,-5,0] {
+    cube skull [-3,29,-2.6] [6,6,5.2] surface bark
+    cube mask [-3.2,30,-3.1] [6.4,4.2,1] surface stone
+    cube jaw [-2.3,29,-3.3] [4.6,1.5,1.1] surface brass
+    cube nose [-.55,30.5,-3.6] [1.1,2.3,.8] surface brass
+    cube eye_left [-2.5,32,-3.65] [1.7,.7,.4] material amber
+    cube eye_right [.8,32,-3.65] [1.7,.7,.4] material amber
+    cube brow_left [-2.7,33,-3.7] [2.1,.7,.8] origin [-1.6,33,0] rotate [0,0,-12] surface brass
+    cube brow_right [.6,33,-3.7] [2.1,.7,.8] origin [1.6,33,0] rotate [0,0,12] surface brass
+    cube crown [-3.4,34,-2.8] [6.8,1.2,5.6] surface brass
+    use horn left_horn at [-2.7,34,0] rotate [0,0,24]
+    use horn right_horn at [2.7,34,0] rotate [0,0,-24]
+  }
+}
+animation idle 2 loop {
+  rotate body 0 [0,-1,0]
+  rotate body 1 [0,1,0]
+  rotate body 2 [0,-1,0]
+  rotate "body/head" 0 [0,-2,0]
+  rotate "body/head" 1 [0,2,0]
+  rotate "body/head" 2 [0,-2,0]
+}

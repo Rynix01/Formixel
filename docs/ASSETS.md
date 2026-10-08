@@ -19,3 +19,15 @@ Animation directives: `rotate`, `move`, `scale`, followed by a quoted semantic g
 `render -o preview.png --size 512 --animation idle --time 0.5` uses a software triangle rasterizer with nearest-neighbor UV sampling, opaque/cutout alpha and a per-pixel depth buffer. The default view faces the model's negative-Z front. Semi-transparent texture alpha is interpreted as a cutout at 128; translucent blending is outside this release. `render -o atlas.png --texture formixel_palette` exports a texture. SVG remains a lightweight geometry-only approximation; use PNG for textures/animation/visibility proof.
 
 Resource budgets include 262144 total texture pixels, 32 textures, 256 material swatches and 10000 keyframes. Renderer size is bounded to 1024 and candidate raster workload to 100 million pixels. All limits fail explicitly. Add/replace patch operations validate the complete model and retain transactionality.
+
+## Local surface recipes
+
+`skin wood bark "#362d25" "#806449" seed 4` creates a fixed 32x32 RGBA texture locally. Supported recipes are bark grain, cracked stone, restrained metal edges, cloth weave, leaf veins and a rune motif. Colours are base/accent hex strings; seed is an optional uint32, default 0. Identical inputs produce identical pixels. This is procedural pixel work, not hand-painted artwork. No image request or pixel array is needed from the planner.
+
+Add `surface wood` to a cube. Each face receives a size-based UV rectangle at two texels per model unit, clamped to 1..32 texels per dimension. Large faces stretch the tile after the cap; small faces sample a subset, so a centered rune may require explicit BBIR UVs for the complete motif. Instance UVs remain those of the prototype, including when uniformly scaled. For authored atlases and individual face placement, use BBIR or import embedded `.bbmodel` textures.
+
+## Inspect from several angles
+
+PNG previews support `--view isometric|front|back|left|right|top`; default is isometric. Orthographic views use the same geometry, animation sampler, UVs and depth buffer. Front faces negative Z. Views are local renders and make no provider call. SVG stays geometry-only and rejects `--view`/animation options. Texture export rejects preview options.
+
+`quality model.bbmodel` reports texture coverage, zero-area/out-of-atlas UVs and coincident cuboids with identical bounds, pivot, rotation and parent. These are technical authoring diagnostics, not an aesthetic score. Intentional overlaps and silhouettes need visual inspection; equivalent world geometry under different parents is not detected. The renderer uses simple directional lighting, not PBR, editor lighting or glow.

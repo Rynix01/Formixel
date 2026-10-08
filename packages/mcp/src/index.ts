@@ -25,7 +25,7 @@ export function handle(message: unknown): unknown {
     return result({
       protocolVersion: protocol,
       capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'Formixel', version: '1.0.0' },
+      serverInfo: { name: 'Formixel', version: '1.1.0' },
     });
   if (m.method === 'ping') return result({});
   if (m.method === 'tools/list')

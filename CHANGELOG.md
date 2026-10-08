@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0 — 2026-10-08
+
+- Ordered reusable FXL components with bounded instancing, hierarchical IDs and uniform scaling.
+- Six deterministic local pixel surface recipes with proportional face UVs.
+- Compact planner grammar and silhouette/proportion guidance shared by native/API providers.
+- Codex completed-event usage parsing and optional API usage counters; missing counts remain null.
+- Explicit validated source cache for generate/run, with zero transport calls on matching hits.
+- Technical quality reports and six local textured PNG camera views.
+- Component-based Ironroot Knight fixture and reproducible equivalent-source benchmark.
+- Integration coverage for transforms, UVs, native roundtrip, cache failure handling, usage and views.
+
 ## 1.0.0 — 2026-10-06
 
 - BBIR 2 materials, RGBA pixels, face UV/visibility and numeric bone animations; BBIR 1 migration.

@@ -17,3 +17,7 @@ MCP accepts FXL strings only. No file paths, shell commands or model provider ca
 Report vulnerabilities privately through the repository owner's GitHub contact. Never commit `.env`, account data, provider transcripts or API keys. Before release, re-audit dependencies and adapter flags against supported CLI versions.
 
 Resource caps: CLI documents 16 MB; FXL/provider source 2 MB; prompts 32 KB; 10,000 cubes/1,000 groups/depth 32; 262144 pixels; 10,000 keyframes; renderer 1024 dimensions/100 million candidate pixels. Static PNG parsing verifies CRC and bounded inflated output. No external textures are opened. Doctor reports installation/auth booleans and model-free version text; keys/auth bodies are never emitted.
+
+Components are declarative stored geometry with ordered references, uniform scaling and independent stored/expanded node budgets. They cannot import or recurse. Skin recipes are fixed bounded local pixel generators, not executable template expressions. Codex event parsing rejects tool attempts and retains only final source and allowlisted numeric counters.
+
+Generation cache is opt-in at an explicit local path. Entries store validated FXL only; request fingerprints include provider/model/instructions/prompt. Validation runs on every hit. Corrupt entries fail without contacting a provider. Cache directories can reveal model details in source and must remain private; no shared-cache or hostile-filesystem protection is implied. Concurrent misses can each make a request. Output overwrite and timeout policies still apply.
