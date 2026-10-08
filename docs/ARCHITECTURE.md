@@ -14,6 +14,8 @@ The core runs without providers or Blockbench. CLI orchestration owns files and 
 
 In 1.1, the CLI validates generation options and computes a provider/model/prompt/instruction fingerprint before an optional cache lookup. A hit returns locally revalidated FXL with zero transport calls. A miss makes one provider request, captures allowlisted numeric usage, validates nonempty geometry and stores only source. No retry, provider substitution or critic request occurs. Invalid cached data fails before contacting the provider.
 
+In 1.2 an explicitly selected PNG can accompany native Codex planning. CLI file limits and the shared bounded PNG decoder validate/normalize pixels before cache lookup. The provider receives bytes, not user-controlled path/flags, stages one fixed image file in its owned temporary directory and retains the restricted invocation. Reference instructions and normalized content extend the fingerprint. Unsupported providers fail locally. Reference pixels are not stored in source cache entries. The authored Sentinel fixture separately demonstrates deliberate atlas/rig construction through the core API.
+
 | Package              | Responsibility                                                                                      |
 | -------------------- | --------------------------------------------------------------------------------------------------- |
 | @formixel/core       | BBIR/contracts, FXL, geometry, materials/PNG, animation, rendering, patches, bbmodel codec          |

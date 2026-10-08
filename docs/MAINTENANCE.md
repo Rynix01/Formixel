@@ -8,25 +8,27 @@ Read README.md, ARCHITECTURE.md, SECURITY.md, FXL.md and ASSETS.md. Install with
 
 ## Implementation map
 
-| Module                | Responsibility                                                  |
-| --------------------- | --------------------------------------------------------------- |
-| core/model.ts         | BBIR validation, resource budgets and canonicalization          |
-| core/dsl.ts           | Token scanner, bounded geometry macros and animation grammar    |
-| core/geometry.ts      | Hierarchical transforms, bounds and SVG preview                 |
-| core/materials.ts     | Swatches, textures and deterministic baking                     |
-| core/skins.ts         | Six fixed seeded local RGBA surface recipes                     |
-| core/quality.ts       | Technical UV coverage and coincident geometry diagnostics       |
-| core/png.ts           | Bounded static PNG codec, CRC and filter handling               |
-| core/animation.ts     | Numeric linear/step bone sampling                               |
-| core/render.ts        | Textured cutout rasterizer and depth/work budgets               |
-| core/bbmodel.ts       | Stable UUIDs, generic native codec and legacy axis migration    |
-| core/patch.ts         | Transactional geometry edits                                    |
-| providers/index.ts    | Fixed argv/origins, stdin transport, process cleanup and doctor |
-| cli/index.ts          | Commands, bounded input and atomic outputs                      |
-| mcp/index.ts          | Compact local stdio adapter                                     |
-| blockbench/index.ts   | Shared compiler and native codec bridge                         |
-| scripts/release.mjs   | Standalone bundles, licenses and deterministic archives         |
-| scripts/benchmark.mjs | Equivalent compact/expanded FXL source comparison               |
+| Module                        | Responsibility                                                  |
+| ----------------------------- | --------------------------------------------------------------- |
+| core/model.ts                 | BBIR validation, resource budgets and canonicalization          |
+| core/dsl.ts                   | Token scanner, bounded geometry macros and animation grammar    |
+| core/geometry.ts              | Hierarchical transforms, bounds and SVG preview                 |
+| core/materials.ts             | Swatches, textures and deterministic baking                     |
+| core/skins.ts                 | Six fixed seeded local RGBA surface recipes                     |
+| core/quality.ts               | Technical UV coverage and coincident geometry diagnostics       |
+| core/png.ts                   | Bounded static PNG codec, CRC and filter handling               |
+| core/animation.ts             | Numeric linear/step bone sampling                               |
+| core/render.ts                | Textured cutout rasterizer and depth/work budgets               |
+| core/uv.ts                    | Native face-corner orientation, reversal and rotation contract  |
+| core/bbmodel.ts               | Stable UUIDs, generic native codec and legacy axis migration    |
+| core/patch.ts                 | Transactional geometry edits                                    |
+| providers/index.ts            | Fixed argv/origins, stdin transport, process cleanup and doctor |
+| cli/index.ts                  | Commands, bounded input and atomic outputs                      |
+| mcp/index.ts                  | Compact local stdio adapter                                     |
+| blockbench/index.ts           | Shared compiler and native codec bridge                         |
+| scripts/release.mjs           | Standalone bundles, licenses and deterministic archives         |
+| scripts/benchmark.mjs         | Equivalent compact/expanded FXL source comparison               |
+| scripts/generate-sentinel.mjs | Reproducible textured knight and animation rig                  |
 
 Package module paths are relative to packages/*/src.
 
@@ -51,3 +53,5 @@ Usage counters come from completed provider envelopes/events. Missing counts rem
 See VALIDATION.md for test coverage and host limits. MCP interoperability uses the official SDK; PNG uses an independent decoder. Desktop hosts and game-specific codecs need separate fixtures. Extend target formats with explicit constraints, add bounded repair workflows only as opt-in behavior, and benchmark efficiency claims before publishing them.
 
 Inspect current status and CI, choose a concrete gap, add integration coverage and update documentation. Preserve the source-first compiler architecture and optional MCP surface.
+
+Reference PNGs are explicit CLI inputs. Keep byte/pixel/decompression limits, normalization and provider capability checks before cache lookup. Stage normalized bytes at a fixed temporary path, never let untrusted task fields add paths or CLI flags. Hash normalized content plus reference instructions, not the image filename. Cache hits still validate the supplied reference. Test same-path changed pixels, identical pixels at another path, task-run support and unsupported-provider rejection. Keep authored showcase evidence separate from open-ended planner quality.

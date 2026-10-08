@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — 2026-10-08
+
+- Explicit bounded PNG reference input for Codex generate/run, staged in the restricted temporary workspace.
+- Reference pixel and instruction fingerprints in the opt-in source cache; no images/transcripts stored in entries.
+- Correct face UV direction, quarter-turn rotation and reversed rectangles in local PNG previews.
+- Restrained metal gradients, cloth folds and reference-led anatomy guidance.
+- Crimson Sentinel editable project, explicit painted atlas, connected cape/limb/polearm rig and idle/walk/attack clips.
+- Independent UV-contract, reference cache/validation and authored-asset/release regression coverage.
+
 ## 1.1.0 — 2026-10-08
 
 - Ordered reusable FXL components with bounded instancing, hierarchical IDs and uniform scaling.
