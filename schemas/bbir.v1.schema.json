@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rynix01/Formixel/schemas/bbir.v1.schema.json",
+  "title": "Formixel BBIR 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "name", "format", "resolution", "cubes", "groups"],
+  "properties": {
+    "version": { "const": 1 },
+    "name": { "$ref": "#/$defs/name" },
+    "format": { "const": "free" },
+    "resolution": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "integer", "minimum": 1, "maximum": 8192 }
+    },
+    "cubes": { "type": "array", "maxItems": 10000, "items": { "$ref": "#/$defs/cube" } },
+    "groups": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/group" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_.:/-]{1,128}$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "\\S" },
+    "vector": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number", "minimum": -1000000, "maximum": 1000000 }
+    },
+    "cube": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "from", "to", "origin", "rotation", "color"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/name" },
+        "from": { "$ref": "#/$defs/vector" },
+        "to": { "$ref": "#/$defs/vector" },
+        "origin": { "$ref": "#/$defs/vector" },
+        "rotation": { "$ref": "#/$defs/vector" },
+        "color": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "parent": { "$ref": "#/$defs/id" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "origin", "rotation"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/name" },
+        "origin": { "$ref": "#/$defs/vector" },
+        "rotation": { "$ref": "#/$defs/vector" },
+        "parent": { "$ref": "#/$defs/id" }
+      }
+    }
+  },
+  "$comment": "Runtime validation additionally enforces positive cube dimensions, globally unique IDs, existing group parents, no cycles, finite values and hierarchy depth <=32. Schema validation alone is insufficient."
+}

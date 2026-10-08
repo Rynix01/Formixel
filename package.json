@@ -1,0 +1,35 @@
+{
+  "name": "formixel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b && node scripts/build-plugin.mjs",
+    "test": "npm run build && node scripts/release.mjs && node --test tests/*.test.mjs",
+    "check": "npm run format:check && npm test",
+    "formixel": "node packages/cli/dist/index.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "release": "npm run build && node scripts/release.mjs"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@types/node": "^22.0.0",
+    "ajv": "^8.20.0",
+    "esbuild": "^0.28.2",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rynix01/Formixel.git"
+  }
+}

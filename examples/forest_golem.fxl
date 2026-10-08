@@ -1,0 +1,26 @@
+model "forest_golem"
+texture 32 32
+material bark "#60452fff"
+material eye "#fbce45ff"
+pattern moss 8 8 "#426d32ff" "#527e40ff"
+group torso origin [0,12,0] {
+  cube body [-6,0,-3] [12,16,6] surface moss
+  group head origin [0,20,0] {
+    cube skull [-4,16,-4] [8,8,8] material bark
+    mirror x {
+      cube eye [1,20,-4.5] [2,1,1] material eye
+    }
+  }
+  mirror x {
+    group arm origin [8,13,0] {
+      cube arm [6,3,-2] [4,12,4] material bark
+    }
+  }
+}
+mirror x { cube leg [1,-8,-2] [4,8,4] material bark }
+repeat 3 offset [0,0,2] { cube ridge [-1,23,-2] [2,2,1] surface moss }
+animation idle 2 loop {
+  rotate "torso/head" 0 [0,-10,0]
+  rotate "torso/head" 1 [0,10,0]
+  rotate "torso/head" 2 [0,-10,0]
+}

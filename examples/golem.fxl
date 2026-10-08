@@ -1,0 +1,13 @@
+# Formixel BBScript / FXL 1
+model "stone_golem"
+texture 64 64
+group torso origin [0, 12, 0] {
+  cube body [-6, 0, -3] [12, 16, 6] color 2
+  group head origin [0, 20, 0] {
+    cube skull [-4, 16, -4] [8, 8, 8] color 0
+    cube eye_left [-3, 20, -4.5] [2, 1, 1] color 4
+    cube eye_right [1, 20, -4.5] [2, 1, 1] color 4
+  }
+}
+cube leg_left [-5, -8, -2] [4, 8, 4] color 2
+cube leg_right [1, -8, -2] [4, 8, 4] color 2

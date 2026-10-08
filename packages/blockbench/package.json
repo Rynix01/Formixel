@@ -1,0 +1,11 @@
+{
+  "name": "@formixel/blockbench",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rynix01/Formixel.git"
+  }
+}

@@ -1,0 +1,45 @@
+# Architecture and decisions
+
+## Pipeline
+
+```
+description/task JSON -> provider -> untrusted FXL
+                                       |
+FXL / BBIR / supported bbmodel -> local validation -> canonical BBIR 2
+                                                      |
+                               compile / inspect / patch / SVG or PNG
+```
+
+The core runs without providers or Blockbench. CLI orchestration owns files and atomic output installation. Providers return text and cannot mutate the model. The plugin shares the parser and compiler, then uses the editor's native project codec. MCP exposes only bounded source strings.
+
+| Package              | Responsibility                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| @formixel/core       | BBIR/contracts, FXL, geometry, materials/PNG, animation, rendering, patches, bbmodel codec          |
+| @formixel/providers  | Fixed native CLI invocations and optional fixed-origin API transports, bounded cancellation, doctor |
+| @formixel/cli        | Bounded files/task loading, commands, atomic writes                                                 |
+| @formixel/mcp        | Three local stdio tools without files/providers                                                     |
+| @formixel/blockbench | Browser bundle, FXL import/build dialog, task export                                                |
+
+## Canonical BBIR 2
+
+Root fields: version, name, free format, resolution, cubes, groups and optional materials/textures/animations. Version 1 geometry remains accepted and canonicalization upgrades it to 2. JSON Schemas are structural aids; runtime validation also checks references, hierarchy, global budgets and cross-field invariants. See schemas/bbir.v2.schema.json and core/model.ts.
+
+Cube coordinates and group pivots are absolute project-space values. Groups are rotation/pivot hierarchies, not translation containers. Cube vertices rotate about their own origin in X/Y/Z order, then through each ancestor. This matches default ZYX Euler application. Animation adds numeric rotation/position/scale poses to bones; there is no expression evaluator.
+
+IDs are semantic, globally unique node identifiers. FXL derives paths from nesting and deterministic macro expansion. Rename patches change labels, never IDs. Canonical arrays sort by ID; object keys sort recursively. Compiler UUIDs derive from SHA-256 of Formixel:<id>. Outputs contain no random IDs, dates or local paths.
+
+Materials bake to a stable swatch texture; custom RGBA pixels and per-face UVs remain explicit. Animation keyframes are numeric linear/step tracks. BBIR can be constructed independently of FXL; FXL is the compact authoring subset. See ASSETS.md.
+
+## Deliberate constraints
+
+FXL is a scanner/parser, with bounded AST geometry macros. No general loops, expressions, JavaScript, eval, imports or commands. All patch operations modify a clone and validate the model. Removing referenced/nonempty groups fails.
+
+PNG uses a software depth-buffer rasterizer, nearest-neighbor textures, directional face shading and alpha cutout at 128. It samples one requested animation pose. SVG is an approximate flat-color painter preview; overlapping shapes may sort imperfectly. PNG is the primary textured preview.
+
+The bbmodel codec supports a checked generic cuboid subset, not arbitrary archival conversion. Unsupported geometry/assets/metadata fail explicitly. Game profiles require separate codecs and validation; 1.0 exports editable editor projects.
+
+## Development and distribution
+
+Strict TypeScript project references compile the packages. Esbuild bundles the browser bridge and standalone Node entry points; noble SHA-256 and fflate are shared runtime dependencies. Dev-only MCP SDK, Ajv and pngjs independently verify protocols, schemas and pixels. No test dependency is bundled into release runtime.
+
+npm run check builds, packages and tests. npm run release produces a deterministic ZIP with fixed entry times, per-file hashes, bundled legal comments and dependency licenses. Generated dist files are ignored. Change contracts, schemas, provider prompt, docs and tests together. See MAINTENANCE.md for extension seams.

@@ -1,0 +1,291 @@
+import { spawn } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+export type ProviderName = 'codex' | 'claude-code' | 'openai' | 'anthropic';
+export interface GenerationRequest {
+  prompt: string;
+  model?: string;
+  timeoutMs?: number;
+}
+export interface Provider {
+  name: ProviderName;
+  generate(request: GenerationRequest): Promise<string>;
+}
+export const SYSTEM_PROMPT = `You are Formixel's model planner. Return ONLY a valid FXL document without markdown. No tools, files, commands or code execution. Syntax:
+model "name"
+texture 64 64
+group torso origin [0,0,0] rotate [0,0,0] {
+ cube body [-4,0,-2] [8,12,4] origin [0,0,0] rotate [0,0,0] color 2
+}
+cube foot [-4,-4,-2] [4,4,4] color 2
+Cube vectors are from and positive SIZE, not to. Groups can nest. Optional clauses must occur in order origin, rotate, color. Group clauses origin then rotate. Identifiers: letters, digits, underscore, dot or hyphen; start with letter or underscore. IDs are hierarchical and unique. Color is integer 0..7. Additional statements: material green "#517f38"; pattern moss 8 8 "#517f38" "#638848". Cube clauses after color: material green or surface moss. mirror x { cube arm [2,0,-1] [2,8,2] } duplicates geometry across axis zero. repeat 3 offset [0,2,0] { cube ridge [0,0,0] [1,1,1] } expands bounded copies. animation idle 2 loop { rotate "torso" 0 [0,0,0] rotate "torso" 1 [0,10,0] rotate "torso" 2 [0,0,0] }. Animation channels rotate/move/scale refer to quoted hierarchical group IDs; keyframe times must strictly increase per track and be within length. Animation optional step clause holds that frame until the next. Declare materials/patterns before cubes. Keep geometry within 10000 cubes, 1000 groups, depth 32. Format is generic Blockbench free cuboids. Numeric bone animations and embedded checker textures are supported. No meshes or expressions. Honor the user's request within these constraints.`;
+const MAX_OUTPUT = 2_000_000;
+export function cliArguments(name: 'codex' | 'claude-code', model?: string): string[] {
+  if (model && (model.startsWith('-') || model.length > 128))
+    throw new Error('Invalid model identifier');
+  if (name === 'codex')
+    return [
+      'exec',
+      '--ignore-user-config',
+      '--ignore-rules',
+      '--ephemeral',
+      '--skip-git-repo-check',
+      '--sandbox',
+      'read-only',
+      '--disable',
+      'shell_tool',
+      '--disable',
+      'unified_exec',
+      '--disable',
+      'hooks',
+      '--disable',
+      'plugins',
+      '--disable',
+      'apps',
+      '--disable',
+      'multi_agent',
+      '-c',
+      'web_search="disabled"',
+      '--color',
+      'never',
+      ...(model ? ['--model', model] : []),
+      '-',
+    ];
+  return [
+    '-p',
+    '--bare',
+    '--output-format',
+    'text',
+    '--tools',
+    '',
+    '--disallowedTools',
+    'mcp__*',
+    '--permission-mode',
+    'dontAsk',
+    '--strict-mcp-config',
+    '--mcp-config',
+    '{"mcpServers":{}}',
+    '--setting-sources',
+    '',
+    '--no-session-persistence',
+    ...(model ? ['--model', model] : []),
+  ];
+}
+export function runProcess(
+  executable: string,
+  args: string[],
+  input: string,
+  cwd: string,
+  timeoutMs: number,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(executable, args, {
+      cwd,
+      shell: false,
+      windowsHide: true,
+      detached: process.platform !== 'win32',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const chunks: Buffer[] = [];
+    let bytes = 0,
+      settled = false;
+    let abortError: Error | undefined;
+    const finish = (error?: Error, result?: string) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      error ? reject(error) : resolve(result!);
+    };
+    const abort = (error: Error) => {
+      if (settled || abortError) return;
+      abortError = error;
+      clearTimeout(timer);
+      if (process.platform === 'win32' && child.pid) {
+        const killer = spawn('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
+          shell: false,
+          windowsHide: true,
+          stdio: 'ignore',
+        });
+        killer.on('error', () => child.kill('SIGKILL'));
+        killer.on('exit', (code) => {
+          if (code !== 0) child.kill('SIGKILL');
+        });
+      } else if (child.pid) {
+        try {
+          process.kill(-child.pid, 'SIGKILL');
+        } catch {
+          child.kill('SIGKILL');
+        }
+      } else child.kill();
+      // Wait for close before settling so Windows releases the working directory.
+    };
+    const timer = setTimeout(() => abort(new Error('Provider timed out')), timeoutMs);
+    child.on('error', () =>
+      finish(
+        new Error('Provider executable unavailable; install the native CLI and authenticate first'),
+      ),
+    );
+    child.stdin.on('error', () => {});
+    child.stdout.on('data', (chunk: Buffer) => {
+      bytes += chunk.length;
+      if (bytes > MAX_OUTPUT) {
+        abort(new Error('Provider output budget exceeded'));
+      } else chunks.push(chunk);
+    });
+    // Drain stderr without persisting potentially sensitive provider diagnostics.
+    child.stderr.on('data', () => {});
+    child.on('close', (code) =>
+      abortError
+        ? finish(abortError)
+        : code === 0
+          ? finish(undefined, Buffer.concat(chunks).toString('utf8'))
+          : finish(new Error(`Provider exited unsuccessfully (${code})`)),
+    );
+    child.stdin.end(input);
+  });
+}
+function timeout(request: GenerationRequest): number {
+  const n = request.timeoutMs ?? 120_000;
+  if (!Number.isInteger(n) || n < 100 || n > 600_000)
+    throw new Error('Timeout must be 100..600000 ms');
+  return n;
+}
+export function createProvider(name: ProviderName): Provider {
+  if (!['codex', 'claude-code', 'openai', 'anthropic'].includes(name))
+    throw new Error('Unknown provider');
+  return {
+    name,
+    async generate(request) {
+      if (!request.prompt.trim() || Buffer.byteLength(request.prompt) > 32_000)
+        throw new Error('Prompt must be 1..32000 bytes');
+      const duration = timeout(request);
+      if (name === 'codex' || name === 'claude-code') {
+        const cwd = await mkdtemp(join(tmpdir(), 'formixel-provider-'));
+        try {
+          await writeFile(
+            join(cwd, 'AGENTS.md'),
+            'Only return FXL text. Never use tools or execute commands.',
+          );
+          return await runProcess(
+            name === 'codex' ? 'codex' : 'claude',
+            cliArguments(name, request.model),
+            `${SYSTEM_PROMPT}\n\nUser request:\n${request.prompt}`,
+            cwd,
+            duration,
+          );
+        } finally {
+          await rm(cwd, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+        }
+      }
+      const key = process.env[name === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'];
+      if (!key)
+        throw new Error(
+          `Set ${name === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'} for this optional provider`,
+        );
+      if (!request.model) throw new Error('API providers require an explicit model');
+      const url =
+        name === 'openai'
+          ? 'https://api.openai.com/v1/responses'
+          : 'https://api.anthropic.com/v1/messages';
+      const headers: Record<string, string> =
+        name === 'openai'
+          ? { Authorization: `Bearer ${key}` }
+          : { 'x-api-key': key, 'anthropic-version': '2023-06-01' };
+      headers['content-type'] = 'application/json';
+      const body =
+        name === 'openai'
+          ? {
+              model: request.model,
+              instructions: SYSTEM_PROMPT,
+              input: request.prompt,
+              max_output_tokens: 8192,
+              store: false,
+            }
+          : {
+              model: request.model,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: request.prompt }],
+              max_tokens: 8192,
+            };
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(duration),
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new Error(`${name} API HTTP ${response.status}`);
+      }
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Empty API response');
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.length;
+          if (size > MAX_OUTPUT) throw new Error('API response budget exceeded');
+          chunks.push(value);
+        }
+      } finally {
+        await reader.cancel();
+      }
+      const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      if (name === 'openai' && data.status !== 'completed')
+        throw new Error('OpenAI response did not complete');
+      if (name === 'anthropic' && data.stop_reason !== 'end_turn')
+        throw new Error('Anthropic response did not complete');
+      const text =
+        name === 'openai'
+          ? (data.output ?? [])
+              .flatMap((o: any) => o.content ?? [])
+              .filter((c: any) => c.type === 'output_text')
+              .map((c: any) => c.text)
+              .join('\n')
+          : (data.content ?? [])
+              .filter((c: any) => c.type === 'text')
+              .map((c: any) => c.text)
+              .join('\n');
+      if (!text.trim()) throw new Error('Provider returned no model text');
+      return text;
+    },
+  };
+}
+
+export async function diagnoseProvider(name: ProviderName): Promise<Record<string, unknown>> {
+  if (!['codex', 'claude-code', 'openai', 'anthropic'].includes(name))
+    throw new Error('Unknown provider');
+  if (name === 'openai' || name === 'anthropic')
+    return {
+      provider: name,
+      configured: !!process.env[name === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'],
+      liveTest: false,
+    };
+  const cwd = await mkdtemp(join(tmpdir(), 'formixel-doctor-'));
+  const executable = name === 'codex' ? 'codex' : 'claude';
+  try {
+    let version: string;
+    try {
+      version = (await runProcess(executable, ['--version'], '', cwd, 5000)).trim().slice(0, 128);
+    } catch {
+      return { provider: name, installed: false, authenticated: false };
+    }
+    let authenticated = false;
+    try {
+      const status = await runProcess(
+        executable,
+        name === 'codex' ? ['login', 'status'] : ['auth', 'status'],
+        '',
+        cwd,
+        5000,
+      );
+      authenticated = name === 'codex' || JSON.parse(status).loggedIn === true;
+    } catch {}
+    return { provider: name, installed: true, version, authenticated, liveTest: false };
+  } finally {
+    await rm(cwd, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  }
+}

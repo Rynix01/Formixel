@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rynix01/Formixel/schemas/task.v1.schema.json",
+  "title": "Formixel task 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "prompt", "provider"],
+  "properties": {
+    "version": { "const": 1 },
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 32000, "pattern": "\\S" },
+    "provider": { "enum": ["codex", "claude-code", "openai", "anthropic"] },
+    "model": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[^-]" },
+    "timeoutMs": { "type": "integer", "minimum": 100, "maximum": 600000 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "provider": { "enum": ["openai", "anthropic"] } } },
+      "then": { "required": ["model"] }
+    }
+  ],
+  "$comment": "Runtime additionally limits prompt by UTF-8 bytes rather than Unicode character count."
+}
