@@ -12,6 +12,8 @@ FXL / BBIR / supported bbmodel -> local validation -> canonical BBIR 2
 
 The core runs without providers or Blockbench. CLI orchestration owns files and atomic output installation. Providers return text and cannot mutate the model. The plugin shares the parser and compiler, then uses the editor's native project codec. MCP exposes only bounded source strings.
 
+In 1.1, the CLI validates generation options and computes a provider/model/prompt/instruction fingerprint before an optional cache lookup. A hit returns locally revalidated FXL with zero transport calls. A miss makes one provider request, captures allowlisted numeric usage, validates nonempty geometry and stores only source. No retry, provider substitution or critic request occurs. Invalid cached data fails before contacting the provider.
+
 | Package              | Responsibility                                                                                      |
 | -------------------- | --------------------------------------------------------------------------------------------------- |
 | @formixel/core       | BBIR/contracts, FXL, geometry, materials/PNG, animation, rendering, patches, bbmodel codec          |
@@ -28,7 +30,11 @@ Cube coordinates and group pivots are absolute project-space values. Groups are 
 
 IDs are semantic, globally unique node identifiers. FXL derives paths from nesting and deterministic macro expansion. Rename patches change labels, never IDs. Canonical arrays sort by ID; object keys sort recursively. Compiler UUIDs derive from SHA-256 of Formixel:<id>. Outputs contain no random IDs, dates or local paths.
 
+Components are parser-owned prototypes, not new BBIR types. Instancing clones geometry into wrapper groups with prefixed IDs, translates/scales coordinates and pivots and applies the wrapper rotation. Only uniform scale is supported to preserve nested rotation semantics. Definitions are ordered, cannot recurse and have stored-node budgets in addition to final output caps. Existing numeric animation tracks can address instance group IDs. See FXL.md.
+
 Materials bake to a stable swatch texture; custom RGBA pixels and per-face UVs remain explicit. Animation keyframes are numeric linear/step tracks. BBIR can be constructed independently of FXL; FXL is the compact authoring subset. See ASSETS.md.
+
+Skin declarations expand to ordinary fixed-size RGBA textures and explicit proportional face UVs. Geometry and textures remain deterministic and require no additional provider call. Quality diagnostics inspect technical UV/duplicate geometry state; multi-angle PNGs expose geometry/attachment problems for human review. Neither substitutes for visual art direction.
 
 ## Deliberate constraints
 

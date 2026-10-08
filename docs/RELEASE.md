@@ -14,6 +14,6 @@ The archive has fixed ZIP timestamps and ordered entries. Identical source, lock
 
 Before tagging: review git diff, check the current remote CI result, run dependency audit, review docs/VALIDATION.md and known limits, align versions/lockfile and ensure no credentials/transcripts are tracked. Push coherent source commits and the annotated version tag. Record unsupported/live-account checks accurately.
 
-## 1.0 boundary
+## Compiler boundary
 
-1.0 is the local cuboid model compiler with optional planner transports and editor bridge. It includes pixels, UVs, bounded macros, numeric bone animations and deterministic PNG rendering. It is not a Minecraft behavior/resource-pack generator, arbitrary mesh editor or an account-authentication tool. Paid provider calls and marketplace publication require separate intentional use. Provider authentication/availability remains external; doctor reports it without making model requests.
+1.1 is the local cuboid model compiler with optional planner transports and editor bridge. It includes pixels, UVs, bounded macros/components, local skin recipes, numeric bone animations, technical review and deterministic PNG rendering. Usage reporting and source caching do not imply a guaranteed token reduction for every prompt or visual quality for every design. Game-specific packs, meshes and account authentication remain external workflows. Paid provider calls and marketplace publication require separate intentional use. Provider authentication/availability remains external; doctor reports it without making model requests.

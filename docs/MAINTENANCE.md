@@ -1,6 +1,6 @@
 # Maintenance guide
 
-Formixel is a strict TypeScript npm monorepo. All packages use the @formixel namespace. The 1.0 contract is a local cuboid model compiler with optional planner transports and an editor bridge.
+Formixel is a strict TypeScript npm monorepo. All packages use the @formixel namespace. The 1.1 contract is a local cuboid model compiler with compact authoring, optional planner transports and an editor bridge.
 
 ## Development
 
