@@ -16,6 +16,7 @@ import {
   LIMITS,
   canonical,
   renderPNG,
+  renderGIF,
   encodePNG,
   analyzeQuality,
   type RenderView,
@@ -60,7 +61,7 @@ export async function atomicWrite(
     await unlink(temp).catch(() => {});
   }
 }
-const help = `Formixel 1.2 — deterministic model compiler
+const help = `Formixel 1.3 — deterministic model compiler
 Usage: formixel <command> <input> [options]
   build model.fxl -o model.bbmodel
   import model.bbmodel -o model.bbir.json
@@ -70,6 +71,7 @@ Usage: formixel <command> <input> [options]
   validate model.fxl
   patch model.fxl --patch changes.json -o model.bbir.json
   render model.fxl -o preview.png [--size 512] [--view front] [--animation idle --time 0.5]
+  render model.bbmodel -o walk.gif --animation walk [--size 256] [--fps 12]
   render model.fxl --texture moss -o texture.png
   doctor [codex|claude-code|openai|anthropic]
   generate "description" --provider codex -o model.fxl [--model NAME] [--cache DIR] [--reference reference.png]
@@ -84,7 +86,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     return;
   }
   if (argv[0] === '--version') {
-    console.log('1.2.0');
+    console.log('1.3.0');
     return;
   }
   const command = argv.shift()!;
@@ -137,6 +139,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         '--view',
         '--cache',
         '--reference',
+        '--fps',
       ].includes(flag) ||
       !argv.length
     )
@@ -152,7 +155,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       ? ['--provider', '--model', '--timeout', '--cache', '--reference']
       : []),
     ...(command === 'run' ? ['--cache', '--reference'] : []),
-    ...(command === 'render' ? ['--size', '--animation', '--time', '--texture', '--view'] : []),
+    ...(command === 'render'
+      ? ['--size', '--animation', '--time', '--texture', '--view', '--fps']
+      : []),
   ]);
   for (const key of options.keys())
     if (!allowed.has(key)) throw new Error(`Option ${key} is not valid for ${command}`);
@@ -298,7 +303,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     if (options.has('--time') && !options.has('--animation'))
       throw new Error('--time requires --animation');
     if (options.has('--texture')) {
-      if (['--size', '--animation', '--time', '--view'].some((k) => options.has(k)))
+      if (['--size', '--animation', '--time', '--view', '--fps'].some((k) => options.has(k)))
         throw new Error('Texture export cannot be combined with preview options');
       const texture = model.textures?.find((t) => t.id === options.get('--texture'));
       if (!texture) throw new Error('Unknown texture');
@@ -307,7 +312,19 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         height: texture.height,
         pixels: Uint8Array.from(texture.pixels),
       });
+    } else if (extname(output!).toLowerCase() === '.gif') {
+      if (!options.has('--animation') || options.has('--time'))
+        throw new Error('GIF requires --animation and cannot use --time');
+      const size = Number(options.get('--size') ?? 256);
+      result = renderGIF(model, {
+        width: size,
+        height: size,
+        animation: options.get('--animation')!,
+        fps: Number(options.get('--fps') ?? 12),
+        ...(options.has('--view') ? { view: options.get('--view') as RenderView } : {}),
+      });
     } else if (extname(output!).toLowerCase() === '.png') {
+      if (options.has('--fps')) throw new Error('--fps requires GIF output');
       const size = Number(options.get('--size') ?? 512);
       result = renderPNG(model, {
         width: size,
@@ -322,7 +339,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         options.has('--animation') ||
         options.has('--time') ||
         options.has('--size') ||
-        options.has('--view')
+        options.has('--view') ||
+        options.has('--fps')
       )
         throw new Error('Animation and size options require PNG output');
       result = renderSVG(model);

@@ -32,8 +32,8 @@ for (const dir of ['docs', 'schemas', 'examples']) {
 }
 for (const name of ['README.md', 'LICENSE', 'CHANGELOG.md'])
   add(name, new Uint8Array(await readFile(name)));
-for (const dependency of ['@noble/hashes', 'fflate']) {
-  const name = dependency === 'fflate' ? 'LICENSE' : 'LICENSE';
+for (const dependency of ['@noble/hashes', 'fflate', 'gifenc']) {
+  const name = dependency === 'gifenc' ? 'LICENSE.md' : 'LICENSE';
   add(
     'licenses/' + dependency.replace('/', '-') + '.txt',
     new Uint8Array(await readFile('node_modules/' + dependency + '/' + name)),

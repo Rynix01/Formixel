@@ -10,3 +10,6 @@ export * from './render.js';
 export * from './quality.js';
 export * from './skins.js';
 export * from './uv.js';
+export * from './rig.js';
+export * from './atlas.js';
+export * from './gif.js';

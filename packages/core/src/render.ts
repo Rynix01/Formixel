@@ -11,6 +11,11 @@ export interface RenderOptions {
   time?: number;
   background?: string;
   view?: RenderView;
+  /** A fixed world-space envelope for consistent framing across animation frames. */
+  bounds?: { min: Vec3; max: Vec3 };
+  framing?: { min: [number, number]; max: [number, number] };
+  /** Trusted in-process accounting hook; never read from a task/model file. */
+  onWork?: (candidatePixels: number) => void;
 }
 export const RENDER_VIEWS = ['isometric', 'front', 'back', 'left', 'right', 'top'] as const;
 export type RenderView = (typeof RENDER_VIEWS)[number];
@@ -79,7 +84,42 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
         return [((p[0] + p[2]) * Math.sqrt(3)) / 2, (p[0] - p[2]) / 2 - p[1], p[0] + p[1] - p[2]];
     }
   };
-  const all = mesh.flatMap((c) => c.vertices.map(project));
+  if (
+    options.bounds &&
+    (!Array.isArray(options.bounds.min) ||
+      !Array.isArray(options.bounds.max) ||
+      options.bounds.min.length !== 3 ||
+      options.bounds.max.length !== 3 ||
+      !options.bounds.min.every(Number.isFinite) ||
+      !options.bounds.max.every(Number.isFinite) ||
+      options.bounds.min.some((n, i) => n >= options.bounds!.max[i]!))
+  )
+    throw new Error('Invalid render framing bounds');
+  if (
+    options.framing &&
+    (options.bounds ||
+      !Array.isArray(options.framing.min) ||
+      !Array.isArray(options.framing.max) ||
+      options.framing.min.length !== 2 ||
+      options.framing.max.length !== 2 ||
+      ![...options.framing.min, ...options.framing.max].every(Number.isFinite) ||
+      options.framing.min.some((n, i) => n >= options.framing!.max[i]!))
+  )
+    throw new Error('Invalid projected framing');
+  const all: Vec3[] = options.framing
+    ? [
+        [options.framing.min[0], options.framing.min[1], 0],
+        [options.framing.max[0], options.framing.max[1], 0],
+      ]
+    : options.bounds
+      ? Array.from({ length: 8 }, (_, i) =>
+          project([
+            i & 1 ? options.bounds!.max[0] : options.bounds!.min[0],
+            i & 2 ? options.bounds!.max[1] : options.bounds!.min[1],
+            i & 4 ? options.bounds!.max[2] : options.bounds!.min[2],
+          ]),
+        )
+      : mesh.flatMap((c) => c.vertices.map(project));
   const minX = all.reduce((n, p) => Math.min(n, p[0]), Infinity),
     maxX = all.reduce((n, p) => Math.max(n, p[0]), -Infinity),
     minY = all.reduce((n, p) => Math.min(n, p[1]), Infinity),
@@ -146,6 +186,7 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
         workload += (x1 - x0 + 1) * (y1 - y0 + 1);
         if (workload > 100_000_000)
           throw new Error('Render work budget exceeded; reduce geometry or resolution');
+        options.onWork?.((x1 - x0 + 1) * (y1 - y0 + 1));
         for (let y = y0; y <= y1; y++)
           for (let x = x0; x <= x1; x++) {
             const wa = ((q[1] - r[1]) * (x + 0.5 - r[0]) + (r[0] - q[0]) * (y + 0.5 - r[1])) / area,

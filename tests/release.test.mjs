@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { unzipSync } from 'fflate';
 import { PNG } from 'pngjs';
+import { GifReader } from 'omggif';
 test('release archive runs standalone outside checkout with verified hashes', async () => {
   const { version } = JSON.parse(await readFile('package.json', 'utf8'));
   const archive = unzipSync(await readFile(`dist/release/formixel-${version}.zip`));
@@ -72,6 +73,21 @@ test('release archive runs standalone outside checkout with verified hashes', as
       'sentinel-attack.png',
     ]);
     assert.equal(PNG.sync.read(await readFile(join(root, 'sentinel-attack.png'))).width, 512);
+    run([
+      'render',
+      'examples/crimson_paladin.bbmodel',
+      '--animation',
+      'walk',
+      '--size',
+      '128',
+      '--fps',
+      '6',
+      '-o',
+      'paladin.gif',
+    ]);
+    const gif = new GifReader(await readFile(join(root, 'paladin.gif')));
+    assert.equal(gif.numFrames(), 6);
+    assert.equal(gif.width, 128);
     const doctor = JSON.parse(run(['doctor', 'openai']));
     assert.equal(doctor.providers[0].liveTest, false);
     const rpc = spawnSync(process.execPath, ['formixel-mcp.mjs'], {

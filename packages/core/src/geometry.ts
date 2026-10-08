@@ -1,4 +1,4 @@
-import { assertModel, type Model, type Vec3 } from './model.js';
+import { assertModel, type Model, type Vec3, type Group } from './model.js';
 import type { BonePose } from './animation.js';
 export function rotate(point: Vec3, origin: Vec3, degrees: Vec3): Vec3 {
   let [x, y, z] = point.map((v, i) => v - origin[i]!) as Vec3;
@@ -56,6 +56,33 @@ export function inspect(model: Model) {
     faces: model.cubes.length * 6,
     bounds,
   };
+}
+/** World position of a marker in an absolute-coordinate bone hierarchy. */
+export function bonePoint(
+  model: Model,
+  id: string,
+  point: Vec3,
+  poses?: Map<string, BonePose>,
+): Vec3 {
+  assertModel(model);
+  if (point.length !== 3 || !point.every(Number.isFinite)) throw new Error('Invalid rig marker');
+  const groups = new Map(model.groups.map((g) => [g.id, g]));
+  if (!groups.has(id)) throw new Error('Unknown marker group');
+  let p: [number, number, number] = [...point],
+    parent: string | undefined = id;
+  while (parent) {
+    const g: Group = groups.get(parent)!,
+      pose = poses?.get(parent);
+    if (pose) p = p.map((v, i) => g.origin[i]! + (v - g.origin[i]!) * pose.scale[i]!) as Vec3;
+    p = rotate(
+      p,
+      g.origin,
+      pose ? (g.rotation.map((v, i) => v + pose.rotation[i]!) as Vec3) : g.rotation,
+    );
+    if (pose) p = p.map((v, i) => v + pose.position[i]!) as Vec3;
+    parent = g.parent;
+  }
+  return p;
 }
 const palette = [
   '#a855f7',
