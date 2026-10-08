@@ -4,6 +4,8 @@ Formixel 1.0 is a CLI-first, local model compiler. A planner writes BBScript/FXL
 
 The local pipeline works offline with no provider account. It supports cuboids, nested groups, rotations, materials, static RGBA textures, face UVs, symmetry/repetition, numeric bone animation, atomic patches, inspection and PNG previews. It includes a Blockbench bridge and a compact optional MCP adapter. Arbitrary meshes, Molang/effects and direct Minecraft game-pack export are outside the 1.0 compiler contract.
 
+For a detailed textured example, see the [Elderwood Warden showcase](docs/ELDERWOOD_WARDEN.md): 246 cuboids, two custom pixel atlases, a grouped rig and three animations, tested in Blockbench web. Its trusted deterministic authoring script demonstrates the BBIR API beyond the compact FXL material subset.
+
 ## Run the release
 
 Install Node.js 22 or newer, extract the release ZIP, then:

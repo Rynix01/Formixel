@@ -1,0 +1,23 @@
+model "moss_guardian"
+texture 64 64
+material green "#517f38"
+material stone "#747c70"
+
+group torso origin [0,0,0] rotate [0,0,0] {
+ cube body [-4,0,-2] [8,10,4] color 2 material stone
+ cube moss_chest [-3,5,-3] [6,4,1] color 3 material green
+ cube left_leg [-4,-6,-2] [3,6,4] color 2 material stone
+ cube right_leg [1,-6,-2] [3,6,4] color 2 material stone
+ mirror x {
+  cube arm [4,1,-2] [3,8,4] color 3 material green
+ }
+ group head origin [0,10,0] rotate [0,0,0] {
+  cube face [-3,10,-3] [6,6,6] color 2 material stone
+ }
+}
+
+animation idle 2 loop {
+ rotate "torso/head" 0 [0,-10,0]
+ rotate "torso/head" 1 [0,10,0]
+ rotate "torso/head" 2 [0,-10,0]
+}
