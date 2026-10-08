@@ -2,7 +2,7 @@
 
 The automated suite covers CLI file workflows and overwrite protection; malformed, executable, cyclic and oversized input; deterministic native exports; material/pixel/UV/animation roundtrips; PNG interoperability; depth and animation rendering; legacy 4.10 axis migration; transactional patches; BBIR schemas; official MCP SDK interoperability; process stdin, timeout and cancellation; mocked API envelopes; plugin lifecycle; and extracted standalone distributions with per-file hashes.
 
-The release suite contains 40 tests. CI runs Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution.
+The release suite contains 45 tests. CI runs Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution.
 
 ## Editor compatibility
 
@@ -27,3 +27,9 @@ The earlier live editor evidence applies to the 1.0 fixture and bridge. New 1.1 
 Independent UV-local-coordinate equations cover six faces, four quarter turns and reversed UV rectangles; asymmetric texture samples verify actual raster output. Reference checks cover decode/CRC/budgets, normalization, fixed image argv, unsupported providers, pixel-sensitive cache keys, same-image different-path hits, task-run behavior and corrupt-image failure before writes. The Sentinel fixture tests deterministic committed-project equivalence, embedded textures, grounded static geometry, polearm parentage, roundtrip and actual animated raster changes.
 
 Native Codex 0.160.1 completed one image-attached smoke request with valid compact FXL and reported usage. An identical repeat returned cached source with zero generation calls. This verifies that installation's image transport, parser and cache workflow; it does not certify the artistic quality of arbitrary output. No image-API or Claude image compatibility is claimed. The authored Sentinel asset has locally inspected six-view and animation renders; its live editor import/save/reopen and gameplay compatibility are not verified here.
+
+## Version 1.3 checks
+
+Two-bone IK is checked with independent forward rotations, unreachable/inner-annulus targets and inverse-vector transforms. Atlas tests check actual decoded texels, edge padding, disjoint region bounds and failed-paint rollback. GIF tests use independent omggif decoding for frame contents, delay totals and a static camera anchor. Paladin checks measure actual hierarchy markers and sole orientation at key/intermediate samples, unique region density, native roundtrip and bind-pose consistency. Extracted distributions render real GIFs without an installed FFmpeg or workspace dependency tree.
+
+These checks prove specified numerical/export behavior. They are not an artistic-quality certificate. Local front/back/side and animation-frame reviews apply to the new fixture; live editor save/reopen and game-controller tests remain unverified.

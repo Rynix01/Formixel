@@ -32,6 +32,8 @@ Read README.md, ARCHITECTURE.md, SECURITY.md, FXL.md and ASSETS.md. Install with
 
 Package module paths are relative to packages/*/src.
 
+Version 1.3 adds `core/atlas.ts` (bounded face-region painting/packing), `core/rig.ts` (two-bone numeric IK/inverse rotations), `core/gif.ts` (fixed-camera bounded motion preview) and `geometry.ts:bonePoint` (actual hierarchy marker positions). `scripts/generate-paladin.mjs` authors the new atlas/rig fixture. `gifenc` is bundled runtime code; `omggif` is an independent dev-only decoder.
+
 ## Contracts
 
 BBIR 1 inputs upgrade to 2. Update runtime types, schemas, docs and tests together. JSON Schema does not enforce hierarchy, cycles, unique references or global budgets. Canonical sorts must preserve deterministic outputs.
@@ -55,3 +57,5 @@ See VALIDATION.md for test coverage and host limits. MCP interoperability uses t
 Inspect current status and CI, choose a concrete gap, add integration coverage and update documentation. Preserve the source-first compiler architecture and optional MCP surface.
 
 Reference PNGs are explicit CLI inputs. Keep byte/pixel/decompression limits, normalization and provider capability checks before cache lookup. Stage normalized bytes at a fixed temporary path, never let untrusted task fields add paths or CLI flags. Hash normalized content plus reference instructions, not the image filename. Cache hits still validate the supplied reference. Test same-path changed pixels, identical pixels at another path, task-run support and unsupported-provider rejection. Keep authored showcase evidence separate from open-ended planner quality.
+
+For animation work, preserve the XYZ hierarchy convention and distinguish solver-local/rest values from native relative animation channels. Store a solved bind pose and subtract its offsets from baked tracks. Measure endpoints with complete parent transforms at key/intermediate times; requested angles alone are not evidence of foot/grip attachment. Keep GIF's aggregate raster/frame/pixel/output limits and absolute-boundary timing. Project actual sampled vertices for framing. Atlas packing must keep padding separate and commit only after validating the entire paint callback output.

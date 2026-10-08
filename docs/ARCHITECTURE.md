@@ -50,4 +50,6 @@ The bbmodel codec supports a checked generic cuboid subset, not arbitrary archiv
 
 Strict TypeScript project references compile the packages. Esbuild bundles the browser bridge and standalone Node entry points; noble SHA-256 and fflate are shared runtime dependencies. Dev-only MCP SDK, Ajv and pngjs independently verify protocols, schemas and pixels. No test dependency is bundled into release runtime.
 
+Version 1.3 adds local authored-atlas/limb APIs and GIF motion preview. `gifenc` is bundled for palette/LZW encoding; dev-only `omggif` independently validates decoded frames. A GIF request computes a fixed projected envelope across bounded sampled poses, then renders locally under an aggregate raster budget. Numeric IK is baked to the existing BBIR 2 keyframes. FXL/provider execution contracts are unchanged; authoring callbacks are trusted application code, not interpreted task text. See AUTHORING.md.
+
 npm run check builds, packages and tests. npm run release produces a deterministic ZIP with fixed entry times, per-file hashes, bundled legal comments and dependency licenses. Generated dist files are ignored. Change contracts, schemas, provider prompt, docs and tests together. See MAINTENANCE.md for extension seams.

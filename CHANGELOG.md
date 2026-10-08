@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 — 2026-10-08
+
+- Deterministic per-region pixel-atlas packing, physical face aspect ratios and extruded padding.
+- Numeric two-bone IK, explicit reachability reporting, inverse rotation and hierarchy marker sampling.
+- Local GIF animation rendering with projected fixed-camera envelopes, timing and aggregate work budgets.
+- Paladin fixture with unique face UVs, solved bind pose, grounded in-place gait and weapon-following grip.
+- Independent GIF decoding, endpoint/ground-contact, atlas and extracted-release coverage.
+
 ## 1.2.0 — 2026-10-08
 
 - Explicit bounded PNG reference input for Codex generate/run, staged in the restricted temporary workspace.

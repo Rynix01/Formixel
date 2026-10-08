@@ -1,12 +1,16 @@
 # Formixel
 
-Formixel 1.2 is a CLI-first, local model compiler. A planner writes BBScript/FXL; Formixel validates the source, builds canonical BBIR, and produces editable Blockbench models. Codex CLI and Claude Code are the primary planners. OpenAI and Anthropic APIs are optional, explicitly selected providers.
+Formixel 1.3 is a CLI-first, local model compiler. A planner writes BBScript/FXL; Formixel validates the source, builds canonical BBIR, and produces editable Blockbench models. Codex CLI and Claude Code are the primary planners. OpenAI and Anthropic APIs are optional, explicitly selected providers.
 
 The local pipeline works offline with no provider account. It supports cuboids, nested groups, rotations, materials, static RGBA textures, face UVs, symmetry/repetition, numeric bone animation, atomic patches, inspection and PNG previews. It includes a Blockbench bridge and a compact optional MCP adapter. Arbitrary meshes, Molang/effects and direct Minecraft game-pack export are outside the 1.0 compiler contract.
 
-For a textured medieval character, open the [Crimson Sentinel](docs/CRIMSON_SENTINEL.md): a silver knight with swept crimson crest, folded cape, layered armor and a double-bladed polearm. The editable project embeds its painted pixel atlas and three animations. Its reproducible authoring fixture demonstrates explicit BBIR face layouts and an articulated rig.
+For explicit texture and motion authoring, open the [Crimson Paladin](docs/CRIMSON_PALADIN.md). It has individually packed face regions, a 512x512 atlas, a solved limb rig, a poleaxe grip and three baked clips. Its reproducible fixture demonstrates the core atlas/rig APIs. Open-ended provider models still need deliberate silhouette, texture and animation review.
 
-![Crimson Sentinel](examples/crimson_sentinel_preview.png)
+![Crimson Paladin](examples/crimson_paladin_preview.png)
+
+![Walk preview](examples/crimson_paladin_walk.gif)
+
+New in 1.3: bounded pixel-atlas packing, a numeric two-bone solver, hierarchy marker checks and local GIF motion rendering with a fixed camera. See [authoring tools](docs/AUTHORING.md) for contracts, frame budgets and practical review.
 
 New in 1.2: explicit PNG references for native Codex planning, pixel-sensitive cache fingerprints, corrected native face UV orientation/rotation in PNG previews, quieter metal/cloth recipes and reference-led proportion guidance. The older [Elderwood Warden](docs/ELDERWOOD_WARDEN.md) remains available as a forest example.
 
@@ -23,6 +27,7 @@ node formixel.mjs inspect golem.bbmodel
 node formixel.mjs quality golem.bbmodel
 node formixel.mjs render examples/ironroot_knight.fxl --view front -o knight-front.png
 node formixel.mjs render examples/forest_golem.fxl -o golem.png --animation idle --time 0.5
+node formixel.mjs render examples/crimson_paladin.bbmodel --animation walk --size 384 -o paladin-walk.gif
 node formixel.mjs import golem.bbmodel -o golem.bbir.json
 node formixel.mjs validate golem.bbir.json
 node formixel.mjs doctor
@@ -40,7 +45,7 @@ npm run formixel -- patch examples/golem.fxl --patch examples/golem.patch.json -
 npm run release
 ```
 
-Source commands run after building. Tests also build and extract the release into an independent temporary directory and exercise the real CLI/MCP there. The CI matrix runs Windows/Linux with Node 22/24. Release output is `dist/release/formixel-1.2.0.zip`. `npm run benchmark` checks equivalent compact/expanded FXL and reports source bytes, not token estimates.
+Source commands run after building. Tests also build and extract the release into an independent temporary directory and exercise the real CLI/MCP there. The CI matrix runs Windows/Linux with Node 22/24. Release output is `dist/release/formixel-1.3.0.zip`. `npm run benchmark` checks equivalent compact/expanded FXL and reports source bytes, not token estimates.
 
 ## Plan a model
 
