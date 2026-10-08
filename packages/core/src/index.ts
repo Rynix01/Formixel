@@ -9,3 +9,4 @@ export * from './animation.js';
 export * from './render.js';
 export * from './quality.js';
 export * from './skins.js';
+export * from './uv.js';

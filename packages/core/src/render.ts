@@ -3,6 +3,7 @@ import { geometry } from './geometry.js';
 import { bakeMaterials, rgba } from './materials.js';
 import { encodePNG, type ImageRGBA } from './png.js';
 import { sampleAnimation } from './animation.js';
+import { faceUVs } from './uv.js';
 export interface RenderOptions {
   width?: number;
   height?: number;
@@ -125,15 +126,7 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
           p[2],
         ] as Vec3;
       });
-      const uv = face?.uv ?? [0, 0, 1, 1],
-        texcoords = [
-          [uv[0], uv[1]],
-          [uv[2], uv[1]],
-          [uv[2], uv[3]],
-          [uv[0], uv[3]],
-        ];
-      const turns = (face?.rotation ?? 0) / 90;
-      for (let i = 0; i < turns; i++) texcoords.unshift(texcoords.pop()!);
+      const texcoords = faceUVs(key as FaceName, face?.uv ?? [0, 0, 1, 1], face?.rotation ?? 0);
       const texture = face?.texture ? textures.get(face.texture) : undefined,
         base = rgba(palette[cube.color]!);
       for (const triangle of [

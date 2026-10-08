@@ -58,6 +58,20 @@ test('release archive runs standalone outside checkout with verified hashes', as
     assert.deepEqual(JSON.parse(run(['quality', 'knight.bbmodel'])).issues, []);
     run(['render', 'knight.bbmodel', '--view', 'front', '-o', 'knight-front.png']);
     assert.equal(PNG.sync.read(await readFile(join(root, 'knight-front.png'))).width, 512);
+    run(['import', 'examples/crimson_sentinel.bbmodel', '-o', 'sentinel.bbir.json']);
+    assert.equal(JSON.parse(run(['validate', 'sentinel.bbir.json'])).valid, true);
+    assert.deepEqual(JSON.parse(run(['quality', 'sentinel.bbir.json'])).issues, []);
+    run([
+      'render',
+      'examples/crimson_sentinel.bbmodel',
+      '--animation',
+      'attack',
+      '--time',
+      '0.65',
+      '-o',
+      'sentinel-attack.png',
+    ]);
+    assert.equal(PNG.sync.read(await readFile(join(root, 'sentinel-attack.png'))).width, 512);
     const doctor = JSON.parse(run(['doctor', 'openai']));
     assert.equal(doctor.providers[0].liveTest, false);
     const rpc = spawnSync(process.execPath, ['formixel-mcp.mjs'], {

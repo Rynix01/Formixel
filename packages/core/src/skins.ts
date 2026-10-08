@@ -33,11 +33,11 @@ export function skinTexture(
         if ((x + Math.floor(y / 13) * 5 + (seed % 17)) % 23 === 0 && y % 13 < 9) shade = 0.72;
         if (noise(x >> 2, y >> 2) > 0.91) mix = 0.13;
       } else if (kind === 'metal') {
-        shade += (31 - x) / 320;
+        shade = 0.88 + (31 - y) / 190 + (31 - x) / 600 + noise(x, y) * 0.01;
         if (x === 1 || y === 1) mix = 0.45;
         if ((x === 4 || x === 27) && (y === 4 || y === 27)) shade = 0.6;
       } else if (kind === 'cloth') {
-        shade = 0.94 + ((x + y) % 2) * 0.035;
+        shade = 0.74 + Math.abs(((x + (seed % 4)) % 16) - 8) / 32 + (31 - y) / 800;
         if (x === 2 || x === 29) mix = 0.24;
       } else if (kind === 'leaf') {
         if (x === 15 || x === 16 || (Math.abs(x - 16) + y) % 12 === 0) mix = 0.38;

@@ -26,6 +26,9 @@ import {
   diagnoseProvider,
   validateGenerationRequest,
   PLANNER_INSTRUCTIONS,
+  REFERENCE_INSTRUCTIONS,
+  normalizeReferencePNG,
+  type GenerationRequest,
   type TokenUsage,
   type ProviderName,
 } from '@formixel/providers';
@@ -57,7 +60,7 @@ export async function atomicWrite(
     await unlink(temp).catch(() => {});
   }
 }
-const help = `Formixel 1.1 — deterministic model compiler
+const help = `Formixel 1.2 — deterministic model compiler
 Usage: formixel <command> <input> [options]
   build model.fxl -o model.bbmodel
   import model.bbmodel -o model.bbir.json
@@ -69,8 +72,8 @@ Usage: formixel <command> <input> [options]
   render model.fxl -o preview.png [--size 512] [--view front] [--animation idle --time 0.5]
   render model.fxl --texture moss -o texture.png
   doctor [codex|claude-code|openai|anthropic]
-  generate "description" --provider codex -o model.fxl [--model NAME] [--cache DIR]
-  run formixel.task.json -o model.fxl
+  generate "description" --provider codex -o model.fxl [--model NAME] [--cache DIR] [--reference reference.png]
+  run formixel.task.json -o model.fxl [--reference reference.png]
 Options: --force to overwrite an existing output; --timeout MS for generation.
 Providers: codex (default), claude-code, openai, anthropic.
 All generated FXL is validated locally before writing. API providers require an explicit model.
@@ -81,7 +84,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     return;
   }
   if (argv[0] === '--version') {
-    console.log('1.1.0');
+    console.log('1.2.0');
     return;
   }
   const command = argv.shift()!;
@@ -133,6 +136,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         '--texture',
         '--view',
         '--cache',
+        '--reference',
       ].includes(flag) ||
       !argv.length
     )
@@ -144,8 +148,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const allowed = new Set([
     '--output',
     ...(command === 'patch' ? ['--patch'] : []),
-    ...(command === 'generate' ? ['--provider', '--model', '--timeout', '--cache'] : []),
-    ...(command === 'run' ? ['--cache'] : []),
+    ...(command === 'generate'
+      ? ['--provider', '--model', '--timeout', '--cache', '--reference']
+      : []),
+    ...(command === 'run' ? ['--cache', '--reference'] : []),
     ...(command === 'render' ? ['--size', '--animation', '--time', '--texture', '--view'] : []),
   ]);
   for (const key of options.keys())
@@ -173,7 +179,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       }
     | undefined;
   if (command === 'generate' || command === 'run') {
-    let request = {
+    let request: GenerationRequest = {
       prompt: input,
       ...(options.has('--model') ? { model: options.get('--model')! } : {}),
       ...(options.has('--timeout') ? { timeoutMs: Number(options.get('--timeout')) } : {}),
@@ -201,6 +207,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       providerName = task.provider;
     }
     const provider = createProvider(providerName as ProviderName);
+    if (options.has('--reference')) {
+      if (provider.name !== 'codex')
+        throw new Error('Reference images currently require the Codex provider');
+      const path = options.get('--reference')!;
+      const s = await stat(path);
+      if (!s.isFile() || s.size > 1_000_000)
+        throw new Error('Reference must be a PNG file up to 1 MB');
+      request.referencePNG = normalizeReferencePNG(await readFile(path));
+    }
     validateGenerationRequest(provider.name, request);
     if (options.has('--cache') && !options.get('--cache')!.trim())
       throw new Error('Cache directory must not be empty');
@@ -211,8 +226,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
           1,
           providerName,
           request.model ?? null,
-          PLANNER_INSTRUCTIONS,
+          PLANNER_INSTRUCTIONS + (request.referencePNG ? '\n' + REFERENCE_INSTRUCTIONS : ''),
           request.prompt,
+          ...(request.referencePNG
+            ? [createHash('sha256').update(request.referencePNG).digest('hex')]
+            : []),
         ]),
       )
       .digest('hex');

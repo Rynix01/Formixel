@@ -1,6 +1,6 @@
 {
   "include": ["src"],
-  "references": [],
+  "references": [{ "path": "../core" }],
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist"

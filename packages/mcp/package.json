@@ -1,6 +1,6 @@
 {
   "name": "@formixel/mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,7 +9,7 @@
     "formixel-mcp": "./dist/index.js"
   },
   "dependencies": {
-    "@formixel/core": "1.1.0"
+    "@formixel/core": "1.2.0"
   },
   "license": "MIT",
   "repository": {

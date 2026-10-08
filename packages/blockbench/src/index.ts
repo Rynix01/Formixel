@@ -44,7 +44,7 @@ Plugin.register('formixel', {
   description:
     'Compile FXL with textures and animations locally; plan with Codex CLI or Claude Code externally.',
   icon: 'view_in_ar',
-  version: '1.1.0',
+  version: '1.2.0',
   variant: 'both',
   min_version: '5.0.0',
   onload() {
