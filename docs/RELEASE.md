@@ -2,9 +2,9 @@
 
 ## Artifact and installation
 
-npm run release builds dist/release/formixel-1.3.0.zip and its .sha256 companion. The ZIP contains formixel.mjs, formixel-mcp.mjs, formixel.js, docs, examples, schemas, MIT project license, bundled runtime dependency licenses and checksums.json. Extract to a new directory and run node formixel.mjs --help with Node 22+. No runtime npm installation is required.
+npm run release builds dist/release/formixel-1.3.1.zip and its .sha256 companion. The ZIP contains formixel.mjs, formixel-mcp.mjs, formixel.js, docs, examples, schemas, MIT project license, bundled runtime dependency licenses and checksums.json. Extract to a new directory and run node formixel.mjs --help with Node 22+. No runtime npm installation is required.
 
-Source installation: npm ci --ignore-scripts; npm run check. Packages use the @formixel namespace, with aligned 1.3.0 versions. This repository release does not imply npm or Blockbench marketplace publication.
+Source installation: npm ci --ignore-scripts; npm run check. Packages use the @formixel namespace, with aligned 1.3.1 versions. This repository release does not imply npm or Blockbench marketplace publication.
 
 ## Checks
 

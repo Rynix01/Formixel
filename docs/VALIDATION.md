@@ -33,3 +33,7 @@ Native Codex 0.160.1 completed one image-attached smoke request with valid compa
 Two-bone IK is checked with independent forward rotations, unreachable/inner-annulus targets and inverse-vector transforms. Atlas tests check actual decoded texels, edge padding, disjoint region bounds and failed-paint rollback. GIF tests use independent omggif decoding for frame contents, delay totals and a static camera anchor. Paladin checks measure actual hierarchy markers and sole orientation at key/intermediate samples, unique region density, native roundtrip and bind-pose consistency. Extracted distributions render real GIFs without an installed FFmpeg or workspace dependency tree.
 
 These checks prove specified numerical/export behavior. They are not an artistic-quality certificate. Local front/back/side and animation-frame reviews apply to the new fixture; live editor save/reopen and game-controller tests remain unverified.
+
+## Version 1.3.1 checks
+
+Palm/shaft markers are distinct from wrist pivots. Both grips, all three wrist basis axes and forward forearm direction are checked at baked and half-interval samples across idle/walk/attack. The source fixture uses two hands in a diagonal forward guard, outward elbows and closed finger/thumb geometry. Relative wrist orientation is checked with independent nested forward transforms, including singular desired orientations. Local front/side views and complete motion frames are reviewed; live editor save/reopen and gameplay checks remain separate gates.

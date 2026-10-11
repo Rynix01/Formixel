@@ -7,6 +7,7 @@ import {
   PixelAtlas,
   solveTwoBone,
   inverseRotateVector,
+  relativeRotation,
   rotate,
   FACE_NAMES,
   canonical,
@@ -321,7 +322,8 @@ export function createPaladin() {
       upper = G(`${torso}/${side}_arm`, shoulder, torso);
     const forearm = G(upper + '/forearm', [shoulder[0], 21.7, 0], upper);
     const hand = G(forearm + '/hand', [shoulder[0], 17.1, 0], forearm);
-    arms.push({ upper, forearm, hand, shoulder, s });
+    const grip = [shoulder[0], 16.4, 0];
+    arms.push({ upper, forearm, hand, shoulder, s, grip });
     C(upper, 'arm_padding', [s * 4.75, 24.2, 0], [2.35, 4.75, 2.65], 'leather');
     C(upper, 'shoulder_top', [s * 4.6, 27.3, 0], [3.25, 1.1, 4.3], 'steel', [0, 0, s * 14]);
     C(upper, 'shoulder_front', [s * 4.7, 26.8, -1.75], [3.2, 1.9, 0.6], 'steel', [24, 0, s * 14]);
@@ -332,10 +334,15 @@ export function createPaladin() {
     C(forearm, 'arm_lower', [s * 4.75, 19.35, 0], [2.1, 4.4, 2.4], 'leather');
     C(forearm, 'vambrace', [s * 4.75, 19.35, -0.1], [2.55, 3.3, 2.85], 'steel');
     C(forearm, 'cuff', [s * 4.75, 17.85, -0.1], [2.65, 0.5, 2.95], 'gold');
-    C(hand, 'palm', [s * 4.75, 16.65, -0.05], [1.8, 1.5, 1.9], 'leather');
-    C(hand, 'hand_plate', [s * 4.75, 16.6, -1.05], [1.75, 1.15, 0.4], 'steel');
-    for (let i = 0; i < 3; i++)
-      C(hand, `finger_${i}`, [s * 4.75 + (i - 1) * 0.55, 16, -0.45], [0.45, 0.7, 1.15], 'dark');
+    // Closed fist around a local Y-aligned shaft, with a real central grip marker.
+    C(hand, 'palm', [s * 4.75, 16.4, 0.64], [1.7, 1.4, 0.55], 'leather');
+    C(hand, 'hand_plate', [s * 4.75, 16.4, 0.98], [1.75, 1.25, 0.25], 'steel');
+    for (let i = 0; i < 3; i++) {
+      const y = 16.85 - i * 0.45;
+      C(hand, `finger_${i}`, [s * 4.75 + 0.08, y, -0.58], [1.35, 0.36, 0.5], 'dark');
+      C(hand, `finger_curl_${i}`, [s * 4.75 - 0.7, y, 0], [0.42, 0.36, 0.85], 'leather');
+    }
+    C(hand, 'thumb', [s * 4.75 + 0.72, 16.7, -0.08], [0.45, 0.8, 0.95], 'leather', [0, 0, -18]);
   }
   const weapon = G(root + '/halberd', [7.3, 17.1, -1.8], root, [0, 0, -8]);
   C(weapon, 'shaft', [7.3, 20.9, -1.8], [0.65, 32, 0.65], 'dark');
@@ -376,10 +383,13 @@ export function createPaladin() {
   }
   model.textures = [atlas.texture('paladin_atlas', 'crimson_paladin_atlas.png')];
 
-  // Move the grip into the reachable envelope and seat the helmet in its collar.
+  // Seat the shaft in a two-hand guard ahead of the breastplate.
+  const weaponOrigin = [3.8, 20.2, -4.2];
   for (const c of model.cubes.filter((c) => c.parent === weapon))
-    for (const key of ['from', 'to', 'origin']) c[key] = c[key].map((n, i) => n + [-1, 1, 0.6][i]);
-  model.groups.find((g) => g.id === weapon).origin = [6.3, 18.1, -1.2];
+    for (const key of ['from', 'to', 'origin'])
+      c[key] = c[key].map((n, i) => n + weaponOrigin[i] - [7.3, 17.1, -1.8][i]);
+  model.groups.find((g) => g.id === weapon).origin = weaponOrigin;
+  model.groups.find((g) => g.id === weapon).rotation = [0, 0, 45];
   for (const g of model.groups.filter((g) => g.id === head || g.id.startsWith(head + '/')))
     g.origin = g.origin.map((n, i) => n - (i === 1 ? 0.4 : 0));
   for (const c of model.cubes.filter((c) => c.parent === head || c.parent.startsWith(head + '/')))
@@ -400,26 +410,35 @@ export function createPaladin() {
       for (const [group, channel, value] of values) {
         const key = group + ':' + channel;
         if (!tracks.has(key)) tracks.set(key, { group, channel, keyframes: [] });
+        const previous = tracks.get(key).keyframes.at(-1);
+        const continuous = value.map((n, i) =>
+          channel === 'rotation' && previous
+            ? n + Math.round((previous.value[i] - n) / 360) * 360
+            : n,
+        );
         tracks.get(key).keyframes.push({
           time,
-          value: value.map((n) => Math.round(n * 1e7) / 1e7),
+          value: continuous.map((n) => Math.round(n * 1e7) / 1e7),
           interpolation: 'linear',
         });
       }
     }
     model.animations.push({ id, name: id, length, loop, tracks: [...tracks.values()] });
   };
-  const armPose = (a, target, torsoRotation, torsoPosition) => {
+  const armPose = (a, target, handRotation, torsoRotation, torsoPosition) => {
+    const gripOffset = rotate([0, -0.7, 0], [0, 0, 0], handRotation);
+    const wrist = target.map((n, i) => n - gripOffset[i]);
     const relative = inverseRotateVector(
-      target.map((n, i) => n - torsoPosition[i] - [0, 18, 0][i]),
+      wrist.map((n, i) => n - torsoPosition[i] - [0, 18, 0][i]),
       torsoRotation,
     ).map((n, i) => n + [0, 18, 0][i]);
-    const ik = solveTwoBone(a.shoulder, relative, [a.shoulder[0] + a.s * 4, 22, -7], 4.8, 4.6);
+    const ik = solveTwoBone(a.shoulder, relative, [a.shoulder[0] + a.s * 8, 22, 1], 4.8, 4.6);
     return {
       ik,
       values: [
         [a.upper, 'rotation', ik.upper],
         [a.forearm, 'rotation', ik.lower],
+        [a.hand, 'rotation', relativeRotation(handRotation, [torsoRotation, ik.upper, ik.lower])],
       ],
     };
   };
@@ -437,31 +456,30 @@ export function createPaladin() {
     const pelvisY = walking ? -0.2 + 0.08 * Math.cos(phase * 2) : -0.12 + 0.045 * Math.sin(phase);
     const torsoRotation = [
       attack ? envelope * -7 : walking ? 1 : 0,
-      attack ? envelope * -24 : walking ? Math.sin(phase) * 3 : Math.sin(phase) * 1.1,
+      attack ? envelope * -15 : walking ? Math.sin(phase) * 3 : Math.sin(phase) * 1.1,
       0,
     ];
     const torsoPosition = [0, pelvisY, 0];
     const weaponPosition = [
-      attack ? envelope * -5 : 0,
-      attack ? envelope * 1.4 : Math.sin(phase) * 0.05,
-      attack ? envelope * 1.2 : 0,
+      attack ? envelope * -1 : 0,
+      attack ? envelope : Math.sin(phase) * 0.05,
+      0,
     ];
     const weaponRotation = [
-      attack ? envelope * -55 : 0,
-      attack ? envelope * 30 : 0,
-      attack ? envelope * 28 : 0,
+      attack ? envelope * -35 : 0,
+      attack ? envelope * -10 : 0,
+      attack ? envelope * 20 : 0,
     ];
     const w = localGroups.get(weapon),
       worldWeaponRotation = w.rotation.map((n, i) => n + weaponRotation[i]);
-    const rightTarget = rotate([6.3, 18.1, -1.2], w.origin, worldWeaponRotation).map(
+    const rightTarget = rotate(weaponOrigin, w.origin, worldWeaponRotation).map(
       (n, i) => n + weaponPosition[i],
     );
-    const leftRest = [-4.95, 18, -1.4 + (walking ? Math.sin(phase) * 1.1 : 0)];
-    const leftGrip = rotate([6.3, 21.6, -1.2], w.origin, worldWeaponRotation).map(
-      (n, i) => n + weaponPosition[i],
-    );
-    const grasp = smooth(Math.max(0, Math.min(1, (envelope - 0.3) / 0.6)));
-    const leftTarget = leftRest.map((n, i) => lerp(n, leftGrip[i], grasp));
+    const leftTarget = rotate(
+      weaponOrigin.map((n, i) => n + (i === 1 ? 6 : 0)),
+      w.origin,
+      worldWeaponRotation,
+    ).map((n, i) => n + weaponPosition[i]);
     const values = [
       [hips, 'position', torsoPosition],
       [torso, 'rotation', torsoRotation],
@@ -495,7 +513,13 @@ export function createPaladin() {
     ];
     const handTargets = [];
     for (const [i, a] of arms.entries()) {
-      const result = armPose(a, i ? rightTarget : leftTarget, torsoRotation, torsoPosition);
+      const result = armPose(
+        a,
+        i ? rightTarget : leftTarget,
+        worldWeaponRotation,
+        torsoRotation,
+        torsoPosition,
+      );
       values.push(...result.values);
       handTargets.push({
         side: i,
@@ -548,6 +572,7 @@ export function createPaladin() {
           for (const k of t.keyframes)
             k.value = k.value.map((n, i) => Math.round((n - value[i]) * 1e7) / 1e7);
     } else if (channel === 'position' && id === hips) {
+      for (const a of arms) a.grip = a.grip.map((n, i) => n + value[i]);
       for (const g of model.groups.filter((g) => g.id === hips || g.id.startsWith(hips + '/')))
         g.origin = g.origin.map((n, i) => n + value[i]);
       for (const c of model.cubes.filter(
@@ -565,7 +590,19 @@ export function createPaladin() {
     model: result,
     layout,
     evaluate,
-    rig: { hips, torso, head, weapon, legs, arms, L1, L2, ankleY, hipY },
+    rig: {
+      hips,
+      torso,
+      head,
+      weapon,
+      weaponGrips: [weaponOrigin.map((n, i) => n + (i === 1 ? 6 : 0)), weaponOrigin],
+      legs,
+      arms,
+      L1,
+      L2,
+      ankleY,
+      hipY,
+    },
   };
 }
 

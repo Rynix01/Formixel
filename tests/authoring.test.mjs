@@ -7,6 +7,7 @@ import {
   PixelAtlas,
   solveTwoBone,
   inverseRotateVector,
+  relativeRotation,
   rotate,
   parseFXL,
   renderGIF,
@@ -54,6 +55,28 @@ test('two-bone solver reaches 3D targets under independent forward transforms an
   const v = [2, 3, 4],
     r = [25, -37, 13];
   near(inverseRotateVector(rotate(v, [0, 0, 0], r), r), v);
+  for (const desired of [
+    [35, -17, 63],
+    [20, 90, 0],
+    [15, -90, 0],
+  ]) {
+    const parents = [
+        [19, 41, -12],
+        [-23, 16, 54],
+        [9, -7, 21],
+      ],
+      local = relativeRotation(desired, parents);
+    for (const axis of [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ]) {
+      let actual = rotate(axis, [0, 0, 0], local);
+      for (const parent of parents.toReversed()) actual = rotate(actual, [0, 0, 0], parent);
+      near(actual, rotate(axis, [0, 0, 0], desired));
+    }
+  }
+  assert.throws(() => relativeRotation([0, NaN, 0], []));
   assert.throws(() => solveTwoBone([0, 0], [0, 1, 0], [0, 0, 0], 2, 2));
   assert.throws(() => solveTwoBone([0, 0, 0], [0, 1, 0], [0, 0, 0], 0, 2));
 });
@@ -150,12 +173,38 @@ test('paladin numeric rig keeps soles level and grip attached at keys and interp
     for (const t of times) {
       const poses = sampleAnimation(model, a.id, t),
         targets = evaluate(t, a.id);
-      const hand = groups.get(rig.arms[1].hand),
-        weapon = groups.get(rig.weapon);
-      const hp = bonePoint(model, hand.id, hand.origin, poses),
-        wp = bonePoint(model, weapon.id, weapon.origin, poses);
-      gripErrors.push(Math.hypot(...hp.map((n, j) => n - wp[j])));
-      assert.equal(targets.handTargets[1].clamped, false);
+      for (const [j, arm] of rig.arms.entries()) {
+        const hand = groups.get(arm.hand),
+          elbowBone = groups.get(arm.forearm);
+        assert.ok(Math.hypot(...arm.grip.map((n, k) => n - hand.origin[k])) > 0.6);
+        const hp = bonePoint(model, hand.id, arm.grip, poses),
+          wp = bonePoint(model, rig.weapon, rig.weaponGrips[j], poses);
+        gripErrors.push(Math.hypot(...hp.map((n, k) => n - wp[k])));
+        assert.equal(targets.handTargets[j].clamped, false);
+        const elbow = bonePoint(model, elbowBone.id, elbowBone.origin, poses),
+          wrist = bonePoint(model, hand.id, hand.origin, poses);
+        assert.ok(elbow[2] - wrist[2] > 0.4, 'Forearm must extend forward from the elbow');
+        assert.ok(hp[2] < -3.4, 'Both grips must stay ahead of the breastplate');
+        for (let axis = 0; axis < 3; axis++) {
+          const handTip = bonePoint(
+              model,
+              hand.id,
+              arm.grip.map((n, k) => n + (k === axis ? 1 : 0)),
+              poses,
+            ),
+            shaftTip = bonePoint(
+              model,
+              rig.weapon,
+              rig.weaponGrips[j].map((n, k) => n + (k === axis ? 1 : 0)),
+              poses,
+            );
+          near(
+            handTip.map((n, k) => n - hp[k]),
+            shaftTip.map((n, k) => n - wp[k]),
+            0.005,
+          );
+        }
+      }
       for (const [j, l] of rig.legs.entries())
         if (targets.contacts[j].planted) {
           assert.equal(targets.contacts[j].clamped, false);

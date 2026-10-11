@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 — 2026-10-11
+
+- Correct Paladin elbow bend direction and replace the side hold with a two-hand forward guard.
+- Align wrist orientation through the complete parent rotation chain and measure actual palm/shaft markers.
+- Closed finger/thumb geometry, continuous Euler keys and regressions for both grips, wrist axes and forward forearms.
+
 ## 1.3.0 — 2026-10-08
 
 - Deterministic per-region pixel-atlas packing, physical face aspect ratios and extruded padding.

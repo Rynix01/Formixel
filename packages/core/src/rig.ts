@@ -22,6 +22,39 @@ export function inverseRotateVector(v: Vec3, r: Vec3): Vec3 {
   p = rotate(p, [0, 0, 0], [0, -r[1], 0]);
   return rotate(p, [0, 0, 0], [-r[0], 0, 0]);
 }
+/** Local XYZ rotation producing a desired world orientation through a root-to-leaf parent chain. */
+export function relativeRotation(world: Vec3, parents: Vec3[]): Vec3 {
+  if (
+    !Array.isArray(parents) ||
+    parents.length > 64 ||
+    ![world, ...parents].every(
+      (r) =>
+        Array.isArray(r) &&
+        r.length === 3 &&
+        r.every((n) => Number.isFinite(n) && Math.abs(n) <= 1_000_000),
+    )
+  )
+    throw new Error('Expected bounded XYZ rotations and parent chain');
+  const axes = (
+    [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ] as Vec3[]
+  ).map((axis) => {
+    let v = rotate(axis, [0, 0, 0], world);
+    for (const parent of parents) v = inverseRotateVector(v, parent);
+    return v;
+  });
+  const [x, y, z] = axes as [Vec3, Vec3, Vec3];
+  const pitch = Math.asin(Math.max(-1, Math.min(1, -x[2])));
+  const regular = Math.abs(Math.cos(pitch)) > 1e-8;
+  return [
+    regular ? Math.atan2(y[2], z[2]) : Math.atan2(-z[1], y[1]),
+    pitch,
+    regular ? Math.atan2(x[1], x[0]) : 0,
+  ].map((n) => (n * 180) / Math.PI) as Vec3;
+}
 /** Two bones rest along negative Y. Pole selects the elbow/knee bend plane.
  * Targets outside the reachable annulus are clamped and explicitly reported.
  * Output rotations use the same XYZ convention as BBIR's hierarchical renderer.
