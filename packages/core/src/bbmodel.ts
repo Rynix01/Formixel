@@ -146,7 +146,9 @@ export function importBBModel(input: unknown): Model {
   const textureIds = new Map<string, string>();
   let pixelCount = 0;
   for (const [i, t] of (b.textures ?? []).entries()) {
-    if (!t || typeof t.source !== 'string' || t.frame_time || t.animated)
+    // Blockbench saves frame_time=1 and fps=7 even for a single static image.
+    // Scaled/strip UV dimensions are rejected below; timing defaults alone are inert.
+    if (!t || typeof t.source !== 'string' || t.animated || t.frame_interpolate || t.frame_order)
       throw new Error('Textures must be static embedded PNGs');
     const image = pngFromDataURL(t.source);
     pixelCount += image.width * image.height;
@@ -306,10 +308,18 @@ export function importBBModel(input: unknown): Model {
     for (const [bone, value] of Object.entries(a.animators ?? {})) {
       const animator = value as Record<string, any>;
       const group = groupIds.get(bone);
-      if (!group || animator.type !== 'bone' || !Array.isArray(animator.keyframes))
+      const keys = animator?.keyframes === undefined ? [] : animator.keyframes;
+      if (
+        !group ||
+        !animator ||
+        animator.type !== 'bone' ||
+        animator.rotation_global ||
+        animator.quaternion_interpolation ||
+        !Array.isArray(keys)
+      )
         throw new Error('Unsupported animator');
       for (const channel of ['rotation', 'position', 'scale'] as const) {
-        const keyframes = animator.keyframes
+        const keyframes = keys
           .filter((k: any) => k.channel === channel)
           .map((k: any) => {
             if (
@@ -347,9 +357,7 @@ export function importBBModel(input: unknown): Model {
           .sort((x: any, y: any) => x.time - y.time);
         if (keyframes.length) tracks.push({ group, channel, keyframes });
       }
-      if (
-        animator.keyframes.some((k: any) => !['rotation', 'position', 'scale'].includes(k.channel))
-      )
+      if (keys.some((k: any) => !['rotation', 'position', 'scale'].includes(k.channel)))
         throw new Error('Unsupported animation channel');
     }
     const animation: Animation = {
