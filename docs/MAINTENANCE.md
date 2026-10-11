@@ -36,6 +36,8 @@ Version 1.3 adds `core/atlas.ts` (bounded face-region painting/packing), `core/r
 
 ## Contracts
 
+The 1.4 dragon fixture is authored in `scripts/generate-dragon.mjs` using the existing core APIs. `tests/dragon.test.mjs` checks the shipped native asset and actual posed marker/sole geometry. `scripts/package-dragon.mjs` packages only an explicit asset allowlist. Keep input references and provider drafts out of these outputs; see [dragon authoring](OBSIDIAN_DRAGON.md) for UV reuse, numeric effect limitations and regeneration commands.
+
 BBIR 1 inputs upgrade to 2. Update runtime types, schemas, docs and tests together. JSON Schema does not enforce hierarchy, cycles, unique references or global budgets. Canonical sorts must preserve deterministic outputs.
 
 Coordinates and pivots are absolute project space. Group pivots do not translate children. Legacy 4.10 rotation X/Y and position X signs convert to modern conventions. Retain independent migration fixtures. Native re-save may strip Formixel metadata; UUIDs then become imported IDs.

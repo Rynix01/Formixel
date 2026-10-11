@@ -1,8 +1,14 @@
 # Formixel
 
-Formixel 1.3 is a CLI-first, local model compiler. A planner writes BBScript/FXL; Formixel validates the source, builds canonical BBIR, and produces editable Blockbench models. Codex CLI and Claude Code are the primary planners. OpenAI and Anthropic APIs are optional, explicitly selected providers.
+Formixel 1.4 is a CLI-first, local model compiler. A planner writes BBScript/FXL; Formixel validates the source, builds canonical BBIR, and produces editable Blockbench models. Codex CLI and Claude Code are the primary planners. OpenAI and Anthropic APIs are optional, explicitly selected providers.
 
 The local pipeline works offline with no provider account. It supports cuboids, nested groups, rotations, materials, static RGBA textures, face UVs, symmetry/repetition, numeric bone animation, atomic patches, inspection and PNG previews. It includes a Blockbench bridge and a compact optional MCP adapter. Arbitrary meshes, Molang/effects and direct Minecraft game-pack export are outside the 1.0 compiler contract.
+
+New in 1.4: the [Obsidian Crimson Dragon](docs/OBSIDIAN_DRAGON.md), a quadrupedal fixture with a mapped pixel atlas, articulated wings/jaw/tail, four attacks and two looping clips. The reproducible local generator writes six views, motion previews and attack contact sheets. Run `node scripts/generate-dragon.mjs dist/showcase/dragon`, then `node scripts/package-dragon.mjs dist/showcase/dragon` to make its separate asset pack.
+
+![Obsidian Crimson Dragon](examples/obsidian_crimson_dragon_preview.png)
+
+![Bite lunge](examples/obsidian_crimson_dragon_bite.gif)
 
 For explicit texture and motion authoring, open the [Crimson Paladin](docs/CRIMSON_PALADIN.md). It has individually packed face regions, a 512x512 atlas, a solved limb rig, a poleaxe grip and three baked clips. Its reproducible fixture demonstrates the core atlas/rig APIs. Open-ended provider models still need deliberate silhouette, texture and animation review.
 
@@ -45,7 +51,7 @@ npm run formixel -- patch examples/golem.fxl --patch examples/golem.patch.json -
 npm run release
 ```
 
-Source commands run after building. Tests also build and extract the release into an independent temporary directory and exercise the real CLI/MCP there. The CI matrix runs Windows/Linux with Node 22/24. Release output is `dist/release/formixel-1.3.1.zip`. `npm run benchmark` checks equivalent compact/expanded FXL and reports source bytes, not token estimates.
+Source commands run after building. Tests also build and extract the release into an independent temporary directory and exercise the real CLI/MCP there. The CI matrix runs Windows/Linux with Node 22/24. Release output is `dist/release/formixel-1.4.0.zip`. `npm run benchmark` checks equivalent compact/expanded FXL and reports source bytes, not token estimates.
 
 ## Plan a model
 

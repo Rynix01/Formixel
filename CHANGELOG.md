@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 — 2026-10-11
+
+- Add Obsidian Crimson Dragon: explicit atlas, quadrupedal solved rig, articulated wings/jaw/tail and six numeric clips.
+- Four attacks with bounded geometric fire/smoke previews, looping idle and in-place walk.
+- Reproducible local authoring, fixed-camera previews/contact sheets and separate checksummed asset packaging.
+- Reachability, interpolated floor contact, attack direction, UV allocation and shipped native asset regressions.
+- Keep constant animation channels as endpoint keys to reduce file size without changing their values.
+- Import Blockbench's static texture timing defaults and initialized empty bone animators; reject unsupported global/quaternion rotation modes explicitly.
+
 ## 1.3.1 — 2026-10-11
 
 - Correct Paladin elbow bend direction and replace the side hold with a two-hand forward guard.

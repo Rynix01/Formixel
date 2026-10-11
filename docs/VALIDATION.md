@@ -2,11 +2,11 @@
 
 The automated suite covers CLI file workflows and overwrite protection; malformed, executable, cyclic and oversized input; deterministic native exports; material/pixel/UV/animation roundtrips; PNG interoperability; depth and animation rendering; legacy 4.10 axis migration; transactional patches; BBIR schemas; official MCP SDK interoperability; process stdin, timeout and cancellation; mocked API envelopes; plugin lifecycle; and extracted standalone distributions with per-file hashes.
 
-The release suite contains 45 tests. CI runs Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution.
+The release suite contains 50 tests. CI runs Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution.
 
 ## Editor compatibility
 
-Blockbench web 5.2.1 opened the textured forest-golem fixture with 11 cubes, four groups and both textures. Animation channels loaded. The local bridge loaded and built the same FXL fixture; invalid dimensions were rejected before creating a project. Desktop-host and editor save/reopen coverage are incomplete.
+Blockbench web 5.2.1 opened the textured forest-golem fixture with 11 cubes, four groups and both textures. Animation channels loaded. The local bridge loaded and built the same FXL fixture; invalid dimensions were rejected before creating a project. Version 1.4 adds dragon open/save/reopen evidence below; desktop-host coverage remains incomplete.
 
 ## Provider compatibility
 
@@ -37,3 +37,11 @@ These checks prove specified numerical/export behavior. They are not an artistic
 ## Version 1.3.1 checks
 
 Palm/shaft markers are distinct from wrist pivots. Both grips, all three wrist basis axes and forward forearm direction are checked at baked and half-interval samples across idle/walk/attack. The source fixture uses two hands in a diagonal forward guard, outward elbows and closed finger/thumb geometry. Relative wrist orientation is checked with independent nested forward transforms, including singular desired orientations. Local front/side views and complete motion frames are reviewed; live editor save/reopen and gameplay checks remain separate gates.
+
+## Version 1.4 checks
+
+The dragon fixture regenerates the committed 1,059-cuboid native asset deterministically. Tests sample reachable ankle targets, actual sole vertices at keys and between keys, downward jaw opening, tail sweep, wing raise and fire/smoke recovery. UV tests check the allocated regions, padding, physical face density and intentional same-size region reuse. Constant channels use endpoint keys; the complete six-clip fixture stays below the 10,000-key budget.
+
+Blockbench web 5.2.1 opened, saved and reopened the textured dragon on 2026-10-11. Its editor-saved file re-imported with 1,059 cuboids, 36 groups, one embedded texture and six numeric clips. Independent regressions cover the editor's inert static texture timing fields and initialized empty bone animators, while rejecting animated UV strips and unsupported global/quaternion rotation modes. These checks do not certify desktop hosts, game effects or visual equivalence to a studio concept image. See [dragon asset](OBSIDIAN_DRAGON.md).
+
+The standalone release imports, validates, checks UV quality and renders an airborne dragon pose outside the source checkout. Local contact sheets and GIFs use the same geometry and clips. No paid provider is required for fixture regeneration or these tests.

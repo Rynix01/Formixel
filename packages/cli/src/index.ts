@@ -86,7 +86,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     return;
   }
   if (argv[0] === '--version') {
-    console.log('1.3.1');
+    console.log('1.4.0');
     return;
   }
   const command = argv.shift()!;

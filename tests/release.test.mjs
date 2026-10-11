@@ -88,6 +88,22 @@ test('release archive runs standalone outside checkout with verified hashes', as
     const gif = new GifReader(await readFile(join(root, 'paladin.gif')));
     assert.equal(gif.numFrames(), 6);
     assert.equal(gif.width, 128);
+    run(['import', 'examples/obsidian_crimson_dragon.bbmodel', '-o', 'dragon.bbir.json']);
+    assert.equal(JSON.parse(run(['validate', 'dragon.bbir.json'])).valid, true);
+    assert.deepEqual(JSON.parse(run(['quality', 'dragon.bbir.json'])).issues, []);
+    run([
+      'render',
+      'examples/obsidian_crimson_dragon.bbmodel',
+      '--animation',
+      'wing_slam',
+      '--time',
+      '0.6',
+      '--size',
+      '128',
+      '-o',
+      'dragon.png',
+    ]);
+    assert.equal(PNG.sync.read(await readFile(join(root, 'dragon.png'))).width, 128);
     const doctor = JSON.parse(run(['doctor', 'openai']));
     assert.equal(doctor.providers[0].liveTest, false);
     const rpc = spawnSync(process.execPath, ['formixel-mcp.mjs'], {
