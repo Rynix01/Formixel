@@ -20,16 +20,16 @@ Version 1.4 adds the Obsidian Crimson Dragon, deterministic atlas/rig generation
 
 ## Version 1.5 implementation
 
-| Area                 | Implemented scope                                                                                            | Evidence still required                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| Production authoring | Declarative atlas recipes, bounded target motion, sampled geometry constraints, craft/author/review commands | Current integrated release run and rendered inspection of live provider designs           |
-| Physical policy      | Caller-selected anatomy/floor/forward/grip brief with explicit semantic roles and fixed local checks         | Human review of anatomy, role declarations and whole motion; no automatic art certificate |
-| Scoped revision      | Selected nodes, protected shared texture texels, material and per-group animation patches                    | Current native-provider refinement and editor host smoke                                  |
-| References           | Ordered one-to-eight role-tagged Codex PNG inputs and local orthographic overlays                            | Diverse reference/model visual assessment; overlays alone cannot judge fidelity           |
-| Efficiency           | Reported usage/request/time accounting, opt-in workflow cache, exact artifact/model/render comparison        | Real workflow measurements; no general savings percentage from mock counters              |
-| Editor workspace     | Authenticated loopback jobs, progress/cancel, snapshot selection, review/apply gate                          | Current Blockbench web and desktop operation/save/reopen                                  |
-| Continuity           | Digest-bound native context and canonical sidecar; verified remapping API                                    | Exact host context lifecycle check after editor serialization                             |
-| Distribution         | Aligned 1.5.0 sources and versioned standalone archive build                                                 | Final suite, extracted artifact, dependency audit, commit/push and remote CI              |
+| Area                 | Implemented scope                                                                                            | Evidence still required                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Production authoring | Declarative atlas recipes, bounded target motion, sampled geometry constraints, craft/author/review commands | Current integrated release run and rendered inspection of live provider designs             |
+| Physical policy      | Caller-selected anatomy/floor/forward/grip brief with explicit semantic roles and fixed local checks         | Human review of anatomy, role declarations and whole motion; no automatic art certificate   |
+| Scoped revision      | Selected nodes, protected shared texture texels, material and per-group animation patches                    | Real scoped Codex repair verified; general character refinement through UI remains open     |
+| References           | Ordered one-to-eight role-tagged Codex PNG inputs and local orthographic overlays                            | Diverse reference/model visual assessment; overlays alone cannot judge fidelity             |
+| Efficiency           | Reported usage/request/time accounting, opt-in workflow cache, exact artifact/model/render comparison        | Real usage/cache measurements recorded; no general savings percentage                       |
+| Editor workspace     | Authenticated loopback jobs, progress/cancel, snapshot selection, review/apply gate                          | Web create/review/apply/cancel verified; desktop and full character UI corpus remain open   |
+| Continuity           | Digest-bound native context and canonical sidecar; verified remapping API                                    | Browser serialization fixture save/reopen/context reload verified                           |
+| Distribution         | Aligned 1.5.0 sources and versioned standalone archive build                                                 | 162 tests and four-platform CI passed; runtime commit pushed; external publication separate |
 
 The [implementation ledger](IMPLEMENTATION_STATUS.md) distinguishes code, automated coverage, previous host evidence and open release gates. Claude subscription generation is deferred pending login; optional APIs retain mocked coverage without configured keys. Native CLI providers remain primary, with no automatic API fallback.
 

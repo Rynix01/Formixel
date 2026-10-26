@@ -17,7 +17,7 @@
 - Add the offline Copperback Sentinel authoring example and a reproducible effects demonstration bundle.
 - Retain Claude subscription credentials while disabling tools and removing API billing credentials from native child environments; live Claude generation remains deferred pending login.
 
-Current-revision suite, extracted artifact, native workflow, editor UI and remote CI evidence must be recorded in [validation](docs/VALIDATION.md) before declaring the release verified. Optional APIs have mocked transport coverage without live keys. Rich local effects and limited target integration assets have explicit contracts; complete game packs and runtime validation remain outside the verified implementation.
+The runtime milestone passed 162 tests and all four Windows/Linux Node 22/24 jobs. Native workflow and browser evidence, including explicit mocked-fixture boundaries, are recorded in [validation](docs/VALIDATION.md). Desktop hosts, game-runtime integration and premium reference fidelity remain open. Optional APIs have mocked transport coverage without live keys. Rich local effects and limited target integration assets have explicit contracts; complete game packs and runtime validation remain outside the verified implementation.
 
 ## 1.4.0 — 2026-10-11
 
