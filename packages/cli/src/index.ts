@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { readFile, writeFile, rename, link, unlink, stat, mkdir } from 'node:fs/promises';
-import { resolve, extname, dirname, basename, join } from 'node:path';
-import { randomUUID, createHash } from 'node:crypto';
+import { readFile, stat, mkdir } from 'node:fs/promises';
+import { resolve, extname, join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import {
   parseFXL,
@@ -33,36 +33,21 @@ import {
   type TokenUsage,
   type ProviderName,
 } from '@formixel/providers';
-export async function readBounded(path: string): Promise<string> {
-  const s = await stat(path);
-  if (!s.isFile() || s.size > 16_000_000) throw new Error('Input must be a file up to 16 MB');
-  const text = await readFile(path, 'utf8');
-  if (Buffer.byteLength(text) > 16_000_000) throw new Error('Input budget exceeded');
-  return text;
-}
-export function loadText(text: string, extension: string): Model {
-  if (extension === '.fxl' || extension === '.bbscript') return parseFXL(text);
-  const data: unknown = JSON.parse(text);
-  if (extension === '.bbmodel') return importBBModel(data);
-  assertModel(data);
-  return canonical(data);
-}
-export async function atomicWrite(
-  path: string,
-  text: string | Uint8Array,
-  overwrite = false,
-): Promise<void> {
-  const temp = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
-  try {
-    await writeFile(temp, text, { flag: 'wx' });
-    if (overwrite) await rename(temp, path);
-    else await link(temp, path);
-  } finally {
-    await unlink(temp).catch(() => {});
-  }
-}
-const help = `Formixel 1.3 — deterministic model compiler
+import { readBounded, loadText, atomicWrite } from './io.js';
+import { workflowCommand } from './workflow-commands.js';
+import { effectsCommand } from './effects-commands.js';
+import { parseParticleDocument, validateEmissionDocument } from '@formixel/core';
+export { readBounded, loadText, atomicWrite } from './io.js';
+const help = `Formixel 1.5 — deterministic model compiler
 Usage: formixel <command> <input> [options]
+  craft "description" --provider codex --anatomy quadruped -o model.zip [--references views.json]
+  author model.design.json --anatomy quadruped -o model.zip
+  review model.bbmodel -o review.json [--references views.json] [--context model.context.json]
+  refine model.bbmodel --select node:part --instruction "change" -o improved.zip [--provider codex]
+  bridge [--port PORT]
+  effects model.bbir.json --particles effects.json [--animation idle --time 0.5]
+  effects model.bbir.json --particles burst.json --target bedrock --namespace formixel --entity dragon -o assets.zip
+  effects model.bbir.json --emission emission.json --target grayscale -o masks.zip
   build model.fxl -o model.bbmodel
   import model.bbmodel -o model.bbir.json
   export model.bbir.json -o model.bbmodel
@@ -72,21 +57,32 @@ Usage: formixel <command> <input> [options]
   patch model.fxl --patch changes.json -o model.bbir.json
   render model.fxl -o preview.png [--size 512] [--view front] [--animation idle --time 0.5]
   render model.bbmodel -o walk.gif --animation walk [--size 256] [--fps 12]
+  render model.bbir.json -o flame.gif --animation attack --particles effects.json [--emission emission.json]
   render model.fxl --texture moss -o texture.png
   doctor [codex|claude-code|openai|anthropic]
   generate "description" --provider codex -o model.fxl [--model NAME] [--cache DIR] [--reference reference.png]
   run formixel.task.json -o model.fxl [--reference reference.png]
 Options: --force to overwrite an existing output; --timeout MS for generation.
+Workflows: --anatomy prop|biped|quadruped, --floor N, --forward X,Y,Z, --airborne clipIds,
+  --weapon-hands 1|2; review/refine accept --roles FILE and --constraints FILE.
 Providers: codex (default), claude-code, openai, anthropic.
 All generated FXL is validated locally before writing. API providers require an explicit model.
 `;
 export async function main(argv = process.argv.slice(2)): Promise<void> {
+  if (argv[0] === 'effects') {
+    await effectsCommand(argv);
+    return;
+  }
+  if (['craft', 'author', 'review', 'refine', 'bridge'].includes(argv[0] ?? '')) {
+    await workflowCommand(argv);
+    return;
+  }
   if (!argv.length || argv[0] === '--help') {
     console.log(help);
     return;
   }
   if (argv[0] === '--version') {
-    console.log('1.4.0');
+    console.log('1.5.0');
     return;
   }
   const command = argv.shift()!;
@@ -140,6 +136,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         '--cache',
         '--reference',
         '--fps',
+        '--particles',
+        '--emission',
       ].includes(flag) ||
       !argv.length
     )
@@ -156,7 +154,16 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       : []),
     ...(command === 'run' ? ['--cache', '--reference'] : []),
     ...(command === 'render'
-      ? ['--size', '--animation', '--time', '--texture', '--view', '--fps']
+      ? [
+          '--size',
+          '--animation',
+          '--time',
+          '--texture',
+          '--view',
+          '--fps',
+          '--particles',
+          '--emission',
+        ]
       : []),
   ]);
   for (const key of options.keys())
@@ -300,10 +307,34 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         2,
       ) + '\n';
   else if (command === 'render') {
+    const effects = {
+      ...(options.has('--particles')
+        ? {
+            particles: parseParticleDocument(
+              model,
+              JSON.parse(await readBounded(options.get('--particles')!)),
+            ),
+          }
+        : {}),
+      ...(options.has('--emission')
+        ? {
+            emission: validateEmissionDocument(
+              model,
+              JSON.parse(await readBounded(options.get('--emission')!)),
+            ),
+          }
+        : {}),
+    };
+    if (options.has('--particles') && !options.has('--animation'))
+      throw new Error('--particles requires --animation');
     if (options.has('--time') && !options.has('--animation'))
       throw new Error('--time requires --animation');
     if (options.has('--texture')) {
-      if (['--size', '--animation', '--time', '--view', '--fps'].some((k) => options.has(k)))
+      if (
+        ['--size', '--animation', '--time', '--view', '--fps', '--particles', '--emission'].some(
+          (k) => options.has(k),
+        )
+      )
         throw new Error('Texture export cannot be combined with preview options');
       const texture = model.textures?.find((t) => t.id === options.get('--texture'));
       if (!texture) throw new Error('Unknown texture');
@@ -317,6 +348,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         throw new Error('GIF requires --animation and cannot use --time');
       const size = Number(options.get('--size') ?? 256);
       result = renderGIF(model, {
+        ...effects,
         width: size,
         height: size,
         animation: options.get('--animation')!,
@@ -327,6 +359,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       if (options.has('--fps')) throw new Error('--fps requires GIF output');
       const size = Number(options.get('--size') ?? 512);
       result = renderPNG(model, {
+        ...effects,
         width: size,
         height: size,
         ...(options.has('--view') ? { view: options.get('--view') as RenderView } : {}),
@@ -340,7 +373,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         options.has('--time') ||
         options.has('--size') ||
         options.has('--view') ||
-        options.has('--fps')
+        options.has('--fps') ||
+        options.has('--particles') ||
+        options.has('--emission')
       )
         throw new Error('Animation and size options require PNG output');
       result = renderSVG(model);

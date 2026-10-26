@@ -324,7 +324,7 @@ test('optional Anthropic API reports nullable counters without fabricating usage
       onUsage: (u) => (usage = u),
     });
     assert.deepEqual(usage, {
-      inputTokens: 40,
+      inputTokens: 50,
       outputTokens: 5,
       cachedInputTokens: 10,
       reasoningOutputTokens: null,

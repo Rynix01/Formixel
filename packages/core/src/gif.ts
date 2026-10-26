@@ -4,6 +4,22 @@ import { geometry } from './geometry.js';
 import { sampleAnimation } from './animation.js';
 import { renderPixels, RENDER_VIEWS, type RenderOptions, type RenderView } from './render.js';
 
+function checkFramingWork(model: Model, samples: number) {
+  const groups = new Map(model.groups.map((g) => [g.id, g]));
+  let vertices = 0;
+  for (const cube of model.cubes) {
+    let depth = 1,
+      parent = cube.parent;
+    while (parent) {
+      depth++;
+      parent = groups.get(parent)?.parent;
+    }
+    vertices += depth * 8;
+  }
+  if (vertices * samples > 20_000_000)
+    throw new Error('Animation framing transform budget exceeded');
+}
+
 export function animationBounds(
   model: Model,
   id: string,
@@ -12,6 +28,7 @@ export function animationBounds(
   assertModel(model);
   if (!times.length || times.length > 121 || times.some((t) => !Number.isFinite(t) || t < 0))
     throw new Error('Invalid animation framing samples');
+  checkFramingWork(model, times.length);
   const min: Vec3 = [Infinity, Infinity, Infinity],
     max: Vec3 = [-Infinity, -Infinity, -Infinity];
   for (const time of times)
@@ -45,6 +62,7 @@ export function animationFraming(
     !RENDER_VIEWS.includes(view)
   )
     throw new Error('Invalid animation framing samples/view');
+  checkFramingWork(model, times.length);
   const min: [number, number] = [Infinity, Infinity],
     max: [number, number] = [-Infinity, -Infinity];
   for (const time of times)
@@ -77,7 +95,7 @@ export function animationFraming(
 }
 export function renderGIF(
   model: Model,
-  options: Omit<RenderOptions, 'time' | 'bounds' | 'onWork' | 'framing'> & {
+  options: Omit<RenderOptions, 'time' | 'bounds' | 'framing'> & {
     animation: string;
     fps?: number;
   },
@@ -119,6 +137,7 @@ export function renderGIF(
       onWork: (n) => {
         work += n;
         if (work > 100_000_000) throw new Error('GIF aggregate raster budget exceeded');
+        options.onWork?.(n);
       },
     });
     const palette = gifenc.quantize(image.pixels, 256),

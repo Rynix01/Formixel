@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.0 — Unreleased
+
+- Add bounded design documents with explicit per-part atlas recipes, target-based two-bone motion and sampled ground/contact/attachment/level/bend constraints.
+- Add `craft`, `author`, `review` and scoped `refine` workflows with atomic model/review ZIP output, six views, bounded motion previews and checksums.
+- Add caller-selected production briefs, explicit semantic limb/grip roles and fixed local physical checks; no automatic anatomy recognition or aesthetic score.
+- Preserve digest-bound brief/role/constraint context in native outputs and matching BBIR sidecars; reject stale context and provide a verified editor-remapping API.
+- Add ordered role-labeled PNG packs for Codex, JSON-only design/patch provider contracts and normalized content-sensitive workflow caching.
+- Extend transactional patches to textures, materials and numeric animation tracks while protecting unselected geometry and shared atlas texels.
+- Add an authenticated loopback bridge and paired Blockbench workspace with progress, cancellation, selection/reference import, result review and explicit application.
+- Add reported-token/time/request accounting and repeat-cache evaluation with exact model/render comparisons; mocked evaluation is not a live savings claim.
+- Preserve native material colors through supported editor roundtrips and reject unsupported emissive/additive/PBR texture states explicitly.
+- Add digest-bound seeded particle timelines with bounded world/local attachment simulation and independent alpha/additive PNG/GIF previews.
+- Add exact-size single-channel emission masks, fullbright local shading and explicit grayscale/GeckoLib4 mask exports.
+- Add strict limited Bedrock burst integration assets with linked sprites, locators, timed events and an explicit unsupported-semantics manifest.
+- Add the offline Copperback Sentinel authoring example and a reproducible effects demonstration bundle.
+- Retain Claude subscription credentials while disabling tools and removing API billing credentials from native child environments; live Claude generation remains deferred pending login.
+
+Current-revision suite, extracted artifact, native workflow, editor UI and remote CI evidence must be recorded in [validation](docs/VALIDATION.md) before declaring the release verified. Optional APIs have mocked transport coverage without live keys. Rich local effects and limited target integration assets have explicit contracts; complete game packs and runtime validation remain outside the verified implementation.
+
 ## 1.4.0 — 2026-10-11
 
 - Add Obsidian Crimson Dragon: explicit atlas, quadrupedal solved rig, articulated wings/jaw/tail and six numeric clips.

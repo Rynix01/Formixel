@@ -1,13 +1,33 @@
 # Reference-led authoring
 
-Start with an identifiable subject: its silhouette, proportions, main colors and material breaks. A reference image is useful only if the intended subject is clear. Remove scenery/HUD when possible, and identify the target in the prompt if another character appears in the crop. Formixel does not download links or analyze video automatically.
+Start with a clear subject and a consistent pack. Front/back/side views establish proportions; close-ups establish local forms and focal accents; texture references establish materials/palette; storyboards establish motion. A labeled concept texture sheet is **not** a ready-to-map UV atlas.
 
-## Native planning
+## Reference pack
 
-Choose a static, noninterlaced RGB/RGBA8 PNG up to 1 MB, at most 262144 pixels and 1024 pixels on either axis. A 512x512 crop fits the pixel budget. Transparent backgrounds are accepted. Grayscale/indexed PNG, animation and corrupt images fail locally. Image bytes are normalized before forwarding to native Codex; task JSON stays path-free.
+The provider accepts ordered `{role,png}` records, up to eight images. Roles: front, back, left, right, top, detail, texture and storyboard. Only detail/storyboard may repeat. With more than eight sheets, choose complementary views and crop related details into a useful sheet locally. Formixel does not fetch links, download videos or silently discard inputs.
+
+Each image is a static noninterlaced RGB/RGBA8 PNG, at most 1 MB, 262144 pixels and 1024 pixels per axis. A 512x512 crop fits. Total limits: 8 MB and 2097152 pixels. Transparent backgrounds are accepted; animation/interlacing/grayscale/indexed/corrupt files fail locally. Metadata is removed. Image text is untrusted data and cannot change permissions or the output contract.
+
+```ts
+import { createProvider } from '@formixel/providers';
+const text = await createProvider('codex').generate({
+  prompt:
+    'An obsidian quadrupedal dragon. Match the broad crimson wings, ivory horns, green eyes and gold chest armor across these views.',
+  references: [
+    { role: 'front', png: frontPixels },
+    { role: 'right', png: rightPixels },
+    { role: 'back', png: backPixels },
+    { role: 'texture', png: texturePixels },
+    { role: 'storyboard', png: bitePixels },
+  ],
+});
+// Parse and validate the untrusted FXL with @formixel/core before saving.
+```
+
+Codex receives fixed image arguments in that order and a matching role map. Unsupported providers reject supplied images. Capability metadata comes from `providerCapabilities(name)`. Original referencePNG and single-image CLI inputs remain compatible:
 
 ```sh
-node formixel.mjs generate "Silver court knight with swept red double crest, red cape and double-bladed poleaxe. Match this subject's slender plate-armor proportions and modest shoulders." --provider codex --reference knight.png --cache .formixel/cache -o knight.fxl
+node formixel.mjs generate "Silver court knight with slender armor and red crest" --provider codex --reference knight.png --cache .formixel/cache -o knight.fxl
 node formixel.mjs build knight.fxl -o knight.bbmodel
 node formixel.mjs render knight.bbmodel --view front -o front.png
 node formixel.mjs render knight.bbmodel --view right -o side.png
@@ -15,14 +35,14 @@ node formixel.mjs render knight.bbmodel --view back -o back.png
 node formixel.mjs quality knight.bbmodel
 ```
 
-Compare the rendered silhouette against the crop before adding decoration. Check head/torso balance, foot spacing, shoulder size, limb connections and weapon grip from every side. Compare cape/crest shapes separately. Review animation extremes, not just the standing pose. Technical UV diagnostics cannot judge any of those artistic decisions.
+One generation is attempted on a cache miss. New workflows fingerprint normalized reference content, ordered roles, prompt, provider/model and instruction contract. Paths and stripped metadata are not visual changes; roles/order/pixels/contracts are. Images add context/tokens, without an assumed token-saving percentage or automatic paid critic.
 
-One generation request is made on a cache miss. Matching normalized image pixels, prompt, provider, model and instructions reuse locally validated source with zero requests. An image can increase input tokens; reference support is not a token-saving percentage claim. There is no automatic paid visual critic or retry. Unsupported providers fail instead of silently sending text without the supplied image.
+## Inspect shape, texture and motion together
 
-## Texture and rig refinement
+Compare front/side silhouettes before decoration: head/torso balance, shoulders, foot spacing, limb attachment, wing span and tail taper. Inspect back/underside regions so the beauty angle alone does not carry the design. Review the textured model, not disconnected pieces.
 
-FXL skins are bounded local surface recipes. They give a first material pass, not subject-specific texture painting. Refine an accepted shape using explicit BBIR UV regions or the Blockbench texture editor. Keep large quiet metal/cloth regions, restrained wear and distinct focal details. Use the same atlas density for neighboring plates; choose deliberate UVs for a visor, emblem or engraved breastplate.
+Inspect animation extremes and transitions: feet stay planted during support, elbows/knees bend toward their intended side, jaws open from hinges and hands remain attached to weapon sockets. Check rendered/interpolated poses, not only keyframes. UV diagnostics prove bounds/coverage, not artistic quality or reference fidelity.
 
-The [Crimson Sentinel fixture](CRIMSON_SENTINEL.md) demonstrates that refinement. Its generator uses the trusted BBIR API to construct a defined character, paint a fixed atlas locally and attach animation groups. It is an authored reproducible asset, separate from the open-ended provider output. No provider-generated program is evaluated. It is not an automatic quality guarantee for arbitrary prompts.
+FXL skins give bounded local material recipes. Subject-specific texture planning needs atlas regions, density, face direction, quiet large surfaces and deliberate focal details. Refine using BBIR UVs or Blockbench. Authored [Crimson Sentinel](CRIMSON_SENTINEL.md) and [Obsidian Dragon](OBSIDIAN_DRAGON.md) fixtures are reproducible examples, not proof of arbitrary prompt quality.
 
-The compiler supports rotated cuboids. Organic meshes, skin weights, translucent cloth, PBR/emissive shaders and game-specific codecs require separate authoring/export support. Open the generic project in Blockbench and use an appropriate format/plugin for the intended game.
+Rotated cuboids are supported. Organic mesh skinning and game-specific packages need separate exports. A generic model or geometric effect preview is not a ready-to-install Minecraft resource pack.

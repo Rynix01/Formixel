@@ -1,13 +1,13 @@
 {
   "dependencies": {
-    "@formixel/providers": "1.4.0",
-    "@formixel/core": "1.4.0"
+    "@formixel/providers": "1.5.0",
+    "@formixel/core": "1.5.0"
   },
   "types": "./dist/index.d.ts",
   "exports": "./dist/index.js",
   "name": "@formixel/cli",
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "bin": {
     "formixel": "./dist/index.js"
   },

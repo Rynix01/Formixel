@@ -150,6 +150,25 @@ export function importBBModel(input: unknown): Model {
     // Scaled/strip UV dimensions are rejected below; timing defaults alone are inert.
     if (!t || typeof t.source !== 'string' || t.animated || t.frame_interpolate || t.frame_order)
       throw new Error('Textures must be static embedded PNGs');
+    // Blockbench 5.2.1 Texture.properties and an actual editor save use these defaults.
+    // BBIR currently stores color pixels only. Dropping nondefault shader/PBR/side state
+    // would silently change the rendered material, even when its embedded PNG is valid.
+    const defaults: Record<string, unknown> = {
+      render_mode: 'default',
+      render_sides: 'auto',
+      wrap_mode: 'limited',
+      pbr_channel: 'color',
+      file_format: 'png',
+      layers_enabled: false,
+      visible: true,
+      group: '',
+      sync_to_project: '',
+    };
+    for (const [property, supported] of Object.entries(defaults))
+      if (t[property] !== undefined && t[property] !== supported)
+        throw new Error(`Unsupported texture ${property}; refusing lossy material import`);
+    if (t.layers !== undefined && (!Array.isArray(t.layers) || t.layers.length > 0))
+      throw new Error('Unsupported texture layers; flatten explicitly before import');
     const image = pngFromDataURL(t.source);
     pixelCount += image.width * image.height;
     if (pixelCount > 262144) throw new Error('Texture pixel budget exceeded');

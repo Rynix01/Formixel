@@ -2,7 +2,7 @@
 
 The automated suite covers CLI file workflows and overwrite protection; malformed, executable, cyclic and oversized input; deterministic native exports; material/pixel/UV/animation roundtrips; PNG interoperability; depth and animation rendering; legacy 4.10 axis migration; transactional patches; BBIR schemas; official MCP SDK interoperability; process stdin, timeout and cancellation; mocked API envelopes; plugin lifecycle; and extracted standalone distributions with per-file hashes.
 
-The release suite contains 50 tests. CI runs Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution.
+The suite grows with each contract change; use the current test runner summary instead of an older fixed count. CI is configured for Windows/Linux with Node 22/24. Dependency audit results apply to their exact lockfile revision; rerun the audit before distribution. A configured test or workflow is not a recorded pass at the current revision.
 
 ## Editor compatibility
 
@@ -45,3 +45,37 @@ The dragon fixture regenerates the committed 1,059-cuboid native asset determini
 Blockbench web 5.2.1 opened, saved and reopened the textured dragon on 2026-10-11. Its editor-saved file re-imported with 1,059 cuboids, 36 groups, one embedded texture and six numeric clips. Independent regressions cover the editor's inert static texture timing fields and initialized empty bone animators, while rejecting animated UV strips and unsupported global/quaternion rotation modes. These checks do not certify desktop hosts, game effects or visual equivalence to a studio concept image. See [dragon asset](OBSIDIAN_DRAGON.md).
 
 The standalone release imports, validates, checks UV quality and renders an airborne dragon pose outside the source checkout. Local contact sheets and GIFs use the same geometry and clips. No paid provider is required for fixture regeneration or these tests.
+
+## Version 1.5 coverage and open gates
+
+The current source adds the following regression areas. Their presence describes coverage; record the final integrated run and commit before reporting them as release evidence.
+
+| Area                   | Automated checks                                                                                                                                                                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Design and motion      | Exact JSON fields/references, decoded atlas texels/density/padding, input immutability, deterministic output, transformed floor/contact/bend measurements, target IK through animated ancestors, bounded work and key/intermediate pose samples |
+| Caller physical policy | Explicit prop/biped/quadruped brief, semantic limb/sole/grip roles, fixed tolerances, floor/forward/airborne declarations, complete transformed geometry and bounded failure reports                                                            |
+| Scoped repair          | Atomic resource/geometry patches, selected descendants/ancestor context, shared UV texel protection, track isolation, resource usage and final-model validation                                                                                 |
+| Model context          | Canonical digest, native material-baked roundtrip binding, exact brief/role/constraint retention, stale/unknown metadata rejection and verified ID remapping                                                                                    |
+| Workflows              | One request or explicit cache hit, actual reported-or-null usage, failed-output preservation, review artifacts, six renders, bounded motion, reference overlays and checksums                                                                   |
+| References/providers   | Ordered multi-image roles, PNG normalization/budgets, JSON-only output modes, capability rejection, native restrictions/cancellation, Claude subscription preflight and mocked API envelopes                                                    |
+| Bridge/plugin          | Loopback/auth/origin/host checks, bounded jobs/status/cancel/result, repeated-click guard, polling cleanup, snapshot selection, image upload, local result validation and review/apply gate in a mocked host                                    |
+| Evaluation/materials   | Cold/warm request accounting, exact task identity, model/render hash comparison, unknown token propagation, supported material-color roundtrip and rejection of unsupported render states                                                       |
+
+The read-only account checks recorded in [PROVIDER_TESTING.md](PROVIDER_TESTING.md) on 2026-10-26 found native Codex 0.160.1 authenticated, Claude Code 2.1.91 without subscription authentication, and no OpenAI/Anthropic API keys. A limited native Codex smoke correctly identified ordered front/back solid-color images in JSON output. It establishes multi-image/JSON transport for that installation; it does not exercise production model craft/refinement or establish visual quality. Claude live subscription generation is explicitly deferred pending login. API tests remain mocked and make no paid requests.
+
+| Current 1.5 gate                                                                                 | Evidence status                                                                           |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Final integrated `npm run check`, extracted 1.5 command/context smoke and dependency audit       | Pending final-revision result                                                             |
+| Real native Codex craft, scoped refine, cache repeat and rendered/motion inspection              | Pending current production-workflow evidence                                              |
+| Paired Blockbench web/desktop UI, network permission, cancel/review/apply and saved-model reopen | Pending current-host smoke; older 5.2.1 checks cover the earlier compiler/dragon fixtures |
+| Claude subscription generation                                                                   | Deferred pending login; authentication failure makes zero inference calls                 |
+| Optional OpenAI/Anthropic generation                                                             | Mocked coverage only; no keys/live paid request                                           |
+| Commit/push and final remote CI                                                                  | Pending final revision                                                                    |
+
+Do not infer automatic anatomy recognition from roles supplied by a caller/provider. Numeric checks establish only the declared markers, geometry, tolerances and finite samples. Orthographic silhouette overlays use cropped plain-background foreground masks and do not register arbitrary poses/cameras or score artistic fidelity. Detail/texture/storyboard images require human visual review. Mock evaluation usage is accounting evidence, not measured live token savings.
+
+## Independent effects and explicit export boundaries
+
+Seeded particle documents are bound to the exact canonical model digest. Numerical tests cover seeking, loop history, attachment frames, inherited transforms, acceleration/drag, finite lifetimes and bounded work. Raster tests cover opaque-depth occlusion, deterministic ordering, straight alpha and cutout-preserving emission masks. CLI tests inspect actual PNG/GIF and linked target ZIP data. Native emissive/PBR texture states still reject: explicit sidecars are separate from generic editor texture modes.
+
+The reproducible Copperback example is available through `node scripts/effects-demo.mjs OUTPUT.zip` after building the source checkout. It contains editable native/BBIR files, context, independent rich flame and emission documents, previews and a separate strict Bedrock burst integration example. The generic native file does not embed runtime particle behavior. Bedrock fragments require manual integration; GeckoLib4 glowmask files require the documented runtime layer. No game runtime or PBR certification is claimed.

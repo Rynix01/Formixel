@@ -4,6 +4,8 @@ import { bakeMaterials, rgba } from './materials.js';
 import { encodePNG, type ImageRGBA } from './png.js';
 import { sampleAnimation } from './animation.js';
 import { faceUVs } from './uv.js';
+import { sampleParticles, type ParticleDocument } from './particles.js';
+import { validateEmissionDocument, type EmissionDocument } from './emission.js';
 export interface RenderOptions {
   width?: number;
   height?: number;
@@ -16,6 +18,9 @@ export interface RenderOptions {
   framing?: { min: [number, number]; max: [number, number] };
   /** Trusted in-process accounting hook; never read from a task/model file. */
   onWork?: (candidatePixels: number) => void;
+  /** Digest-bound independent effects; animation selects their timeline. */
+  particles?: ParticleDocument;
+  emission?: EmissionDocument;
 }
 export const RENDER_VIEWS = ['isometric', 'front', 'back', 'left', 'right', 'top'] as const;
 export type RenderView = (typeof RENDER_VIEWS)[number];
@@ -39,6 +44,16 @@ const palette = [
 ];
 export function renderPixels(input: Model, options: RenderOptions = {}): ImageRGBA {
   assertModel(input);
+  if (options.particles && !options.animation)
+    throw new Error('Particle preview requires an animation');
+  const particles = options.particles
+    ? sampleParticles(input, options.particles, options.animation!, options.time ?? 0)
+    : [];
+  const masks = new Map(
+    (options.emission ? validateEmissionDocument(input, options.emission).masks : []).map(
+      (mask) => [mask.texture, mask],
+    ),
+  );
   const model = bakeMaterials(input),
     width = options.width ?? 512,
     height = options.height ?? 512;
@@ -119,7 +134,18 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
             i & 4 ? options.bounds!.max[2] : options.bounds!.min[2],
           ]),
         )
-      : mesh.flatMap((c) => c.vertices.map(project));
+      : mesh.length
+        ? mesh.flatMap((c) => c.vertices.map(project))
+        : particles.length
+          ? particles.flatMap((p) => {
+              const point = project(p.position),
+                radius = p.size / 2;
+              return [
+                [point[0] - radius, point[1] - radius, point[2]],
+                [point[0] + radius, point[1] + radius, point[2]],
+              ] as Vec3[];
+            })
+          : [[0, 0, 0] as Vec3];
   const minX = all.reduce((n, p) => Math.min(n, p[0]), Infinity),
     maxX = all.reduce((n, p) => Math.max(n, p[0]), -Infinity),
     minY = all.reduce((n, p) => Math.min(n, p[1]), Infinity),
@@ -197,6 +223,7 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
               index = y * width + x;
             if (z < depth[index]!) continue;
             let color = base;
+            let emission = 0;
             if (texture) {
               const u = wa * texcoords[ia]![0]! + wb * texcoords[ib]![0]! + wc * texcoords[ic]![0]!,
                 v = wa * texcoords[ia]![1]! + wb * texcoords[ib]![1]! + wc * texcoords[ic]![1]!;
@@ -206,15 +233,25 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
                 (ty * texture.width + tx) * 4,
                 (ty * texture.width + tx) * 4 + 4,
               );
+              emission = masks.get(texture.id)?.pixels[ty * texture.width + tx] ?? 0;
             }
             // Cutout alpha: deterministic Minecraft-style pixel textures, no order-dependent blending.
             if (color[3]! < 128) continue;
             depth[index] = z;
             pixels.set(
               [
-                Math.round(color[0]! * shade),
-                Math.round(color[1]! * shade),
-                Math.round(color[2]! * shade),
+                Math.round(
+                  Math.round(color[0]! * shade) * (1 - emission / 255) +
+                    (color[0]! * emission) / 255,
+                ),
+                Math.round(
+                  Math.round(color[1]! * shade) * (1 - emission / 255) +
+                    (color[1]! * emission) / 255,
+                ),
+                Math.round(
+                  Math.round(color[2]! * shade) * (1 - emission / 255) +
+                    (color[2]! * emission) / 255,
+                ),
                 255,
               ],
               index * 4,
@@ -222,6 +259,57 @@ export function renderPixels(input: Model, options: RenderOptions = {}): ImageRG
           }
       }
     }
+  }
+  // Independent screen-facing particle quads, sorted back to front against opaque model depth.
+  // Voxel mode uses sharp square pixels; sprite mode uses a soft radial alpha falloff.
+  for (const particle of particles
+    .map((p) => ({ ...p, projected: project(p.position) }))
+    .sort((a, b) => a.projected[2] - b.projected[2] || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+    const [px, py, z] = particle.projected;
+    const cx = (px - centerX) * scale + width / 2,
+      cy = (py - centerY) * scale + height / 2;
+    const radius = (particle.size * scale) / 2;
+    if (!Number.isFinite(radius) || radius < 0) throw new Error('Invalid particle preview size');
+    if (radius === 0) continue;
+    const color = rgba(particle.color);
+    if (!color[3]) continue;
+    const x0 = Math.max(0, Math.floor(cx - radius)),
+      x1 = Math.min(width - 1, Math.ceil(cx + radius));
+    const y0 = Math.max(0, Math.floor(cy - radius)),
+      y1 = Math.min(height - 1, Math.ceil(cy + radius));
+    if (x1 < x0 || y1 < y0) continue;
+    const work = (x1 - x0 + 1) * (y1 - y0 + 1);
+    workload += work;
+    if (workload > 100_000_000) throw new Error('Particle render work budget exceeded');
+    options.onWork?.(work);
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++) {
+        const dx = (x + 0.5 - cx) / radius,
+          dy = (y + 0.5 - cy) / radius;
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) continue;
+        const alpha =
+          (color[3]! / 255) *
+          (particle.render === 'sprite' ? Math.max(0, 1 - Math.hypot(dx, dy)) : 1);
+        const index = y * width + x;
+        if (alpha <= 0 || z < depth[index]!) continue;
+        const at = index * 4,
+          oldAlpha = pixels[at + 3]! / 255;
+        const nextAlpha = alpha + oldAlpha * (1 - alpha);
+        for (let channel = 0; channel < 3; channel++)
+          pixels[at + channel] =
+            particle.blend === 'additive'
+              ? Math.min(
+                  255,
+                  Math.round(
+                    (pixels[at + channel]! * oldAlpha + color[channel]! * alpha) / nextAlpha,
+                  ),
+                )
+              : Math.round(
+                  (color[channel]! * alpha + pixels[at + channel]! * oldAlpha * (1 - alpha)) /
+                    nextAlpha,
+                );
+        pixels[at + 3] = Math.round(nextAlpha * 255);
+      }
   }
   return { width, height, pixels };
 }

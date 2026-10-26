@@ -1,43 +1,53 @@
 # Provider contracts
 
-`Provider.generate({prompt,model?,timeoutMs?,onUsage?,referencePNG?}) -> Promise<string>` returns untrusted FXL. CLI parses/validates it and rejects empty geometry before writing. `onUsage` and reference bytes are trusted in-process inputs, never task-file fields. Providers do not compile models and never select another provider on error. Default is `codex`; select `claude-code`, `openai`, or `anthropic` explicitly.
+Codex CLI is the default. Claude Code is the other native provider. OpenAI and Anthropic APIs are optional, explicitly selected alternatives. An error never changes the provider, retries a generation, enables tools or relaxes permissions.
 
-CLI authentication is managed by the separately installed provider. Check `codex --version` / `claude --version` and log in outside Formixel. Use native executables on Windows; Formixel intentionally does not use a command shell to execute npm `.cmd` shims. Optional `--model` is forwarded as a single argument, with leading flag-like identifiers rejected. Prompt maximum is 32,000 bytes. Timeout defaults to 120 seconds, allowed range 100..600000 ms. Output maximum is 2,000,000 bytes.
-
-Codex flags follow [official non-interactive documentation](https://learn.chatgpt.com/docs/non-interactive-mode). Current strict invocation includes `--ignore-user-config`, `--ignore-rules`, `--ephemeral`, `--sandbox read-only`, disabled `shell_tool`/`unified_exec`/`hooks`/`plugins`/`apps`/`multi_agent`, and `web_search="disabled"`. `--json` returns event lines; Formixel extracts the final completed `agent_message` and allowlisted numeric `turn.completed.usage` fields. Failed/incomplete streams and tool-attempt events are rejected. Raw event streams and reasoning text are not saved. Missing flags are fatal; there is no downgrade path.
-
-Claude Code flags follow [official CLI reference](https://code.claude.com/docs/en/cli-reference). Bare mode avoids auto-discovered customizations; `--tools ""` removes built-in tools, `--disallowedTools "mcp__*"` denies MCP, strict empty MCP configuration avoids connector discovery, `dontAsk` denies requests needing permission, `--setting-sources ""` skips user/project/local settings. These flags need a modern native CLI. Actual Claude Code authentication and generation remain a manual compatibility gate.
-
-OpenAI uses `POST https://api.openai.com/v1/responses`, `OPENAI_API_KEY`, explicit model, `instructions`, `input`, `max_output_tokens`, and `store:false`; completed `output_text` content is extracted. See [official text generation guide](https://developers.openai.com/api/docs/guides/text). Anthropic uses `POST https://api.anthropic.com/v1/messages`, `ANTHROPIC_API_KEY`, API version `2023-06-01`, explicit model, system grammar, user message and `max_tokens`; `end_turn` text content is extracted. See [official Messages reference](https://platform.claude.com/docs/en/api/messages/create). Model availability and token limits are account-specific. No paid API requests are part of tests.
-
-## Task file bridge
-
-```json
-{ "version": 1, "prompt": "A small stone golem", "provider": "codex" }
+```ts
+type ReferenceRole =
+  'front' | 'back' | 'left' | 'right' | 'top' | 'detail' | 'texture' | 'storyboard';
+interface GenerationRequest {
+  prompt: string;
+  model?: string;
+  timeoutMs?: number;
+  referencePNG?: Uint8Array;
+  references?: Array<{ role: ReferenceRole; png: Uint8Array }>;
+  outputFormat?: 'fxl' | 'design' | 'patch';
+  outputInstructions?: string;
+  signal?: AbortSignal;
+  onUsage?: (usage: TokenUsage | null) => void;
+}
 ```
 
-Optional fields: `model`, `timeoutMs`. No paths or executable flags in the task. Use `formixel run formixel.task.json -o result.fxl`; compile with `formixel build result.fxl -o result.bbmodel`. Output is supplied by the user to the CLI, not trusted from the task. API tasks need `model` set explicitly. The plugin provides a model field and requires it for API tasks.
+`Provider.generate(request)` returns untrusted text. Its caller parses and validates FXL, a design contract, or a scoped patch before saving a model. No generated JavaScript, shell commands, expressions or programs are evaluated. `outputInstructions` is a trusted in-process contract, not a field accepted from provider text or arbitrary task files. JSON modes require an explicit contract and receive JSON-only instructions without the FXL-only grammar. FXL remains the default and retains its instruction text.
 
-## Testing and limits
+Prompt and output contract are each limited to 32,000 UTF-8 bytes. Native stdout/API response maximum is 2,000,000 bytes. Timeout defaults to 120 seconds, accepted range 100..600000 ms. API output is limited to 8192 tokens. A native authentication preflight may take up to 15 seconds before generation. Cancellation kills the owned native process tree or aborts HTTP; temporary references are removed after process close. Cancellation cannot undo remote work already processed.
 
-Fake child processes verify stdin handling, output budget, nonzero exit and timeout. Mocked HTTP verifies envelopes and endpoint/request shapes. This proves transport logic, not that every CLI version/account will authenticate or emit valid FXL. Keep live generation checks separate, record installed versions and inspect tool availability before claiming compatibility. No retry/repair loop is implemented yet; invalid output fails with a local diagnostic and leaves outputs untouched.
+## Capabilities and references
 
-## Doctor
+`providerCapabilities(name)` reports supported formats, reference count, cancellation and reported-or-null usage. All four support text, design and patch contracts; only Codex currently accepts image input. Unsupported references fail before transport and are never silently discarded.
 
-formixel doctor [provider] checks native version/auth status or API environment-key presence. It makes no generation request and never prints credentials or account response bodies. Native checks time out after five seconds each. An installed/authenticated result does not prove model access or grammar quality; run an intentional generation smoke test. Codex 0.160.1 supports the reviewed invocation. Claude Code requires the documented bare/tool restriction flags; incompatible versions fail without weaker fallback.
+Use either backward-compatible `referencePNG` or `references`, never both. A pack contains one to eight PNGs in explicit attachment order. Front/back/left/right/top/texture roles may appear once; detail/storyboard may repeat. Unknown roles/fields and ambiguous duplicates fail. Each raw and normalized PNG is at most 1,000,000 bytes and 262144 pixels, with width/height at most 1024. The pack is bounded to 8,000,000 bytes and 2097152 pixels. Static noninterlaced RGB/RGBA8 only; decoding checks CRCs and inflated-data limits, re-encoding removes metadata.
 
-## Usage and local cache
+`normalizeReferences(request)` returns ordered role/normalized-pixel records. `generationInstructions(request)` includes the matching `Image N: role` map. Workflow caches must fingerprint the exact instructions, output mode, provider/model/prompt and ordered role/pixel hashes. Paths and metadata are not semantic reference identity. Legacy single-PNG FXL instructions stay unchanged for cache compatibility. Reference bytes, transcripts, credentials and raw prompts do not belong in cache records or release assets.
 
-Generation prints a `generation` object with provider, `cacheHit`, `requests`, `sourceBytes` and `usage`. Usage contains reported input/output counts and nullable cached-input/reasoning counts. Missing usage is `null`, not zero. Codex and the API adapters can supply counts; the current Claude Code text transport cannot. Counter definitions differ across providers, and native input includes CLI instructions outside Formixel's control. Do not equate these counts to an account bill or compare providers without checking definitions. Formixel does not impose a hard token limit on native CLIs; APIs retain their 8192-token output ceiling. One attempt is made on a cache miss, with no automatic retry.
+Codex receives repeated fixed `--image` arguments with absolute paths inside an owned temporary directory, e.g. `reference-1-front.png`. Staging files are removed after child completion. Multiple image attachments are documented in the [official Codex CLI reference](https://learn.chatgpt.com/docs/cli/reference). Fixed flags retain ignored user config/rules, ephemeral operation, read-only sandbox, disabled shell/execution/hooks/plugins/apps/multi-agent features, disabled web search and JSON events. Missing flags are fatal. Completed agent text and allowlisted usage are extracted; incomplete/error streams and tool attempts are rejected. Raw events and reasoning text are not saved.
 
-Pass `--cache DIR` to `generate` or `run` to reuse validated source for an identical provider/model/prompt/instructions combination. Cache files contain only `{version:1,source:FXL}`; filenames are SHA-256 request fingerprints. Raw prompts, credentials and transcripts are not written. Source itself can contain sensitive model details, so choose a private directory. On a hit, local parsing still runs, no provider call is made, `requests` is 0 and usage is null. A cache hit does not check current authentication. Invalid options, corrupt entries or invalid cached FXL fail without a paid retry.
+## Native Claude Code
 
-Cache is opt-in. Delete its chosen directory or omit `--cache` to request a new variation. Explicitly selecting the same provider/model retains reproducibility; changing the provider, model, prompt or instructions changes the key. Cache is not a promise that a provider model remains unchanged, and simultaneous cold misses may both call the provider. Exclusive writes preserve valid entries. See [efficiency](EFFICIENCY.md) for measurements and quality limits.
+Formixel uses native executables, never npm command-shell shims. Claude uses print mode, JSON output, no built-in tools, denied MCP tools, strict empty MCP configuration, dontAsk, empty setting sources, disabled hooks/plugins/automatic memory/skills/Chrome and no session persistence. See the [official CLI reference](https://code.claude.com/docs/en/cli-reference).
 
-## Explicit image reference (1.2)
+The adapter intentionally **does not use bare mode**. The [official headless documentation](https://code.claude.com/docs/en/headless) and installed 2.1.91 help state that bare mode skips OAuth/keychain authentication and requires an API key. Instead Formixel preserves subscription credentials, removes Anthropic/OpenAI API credentials and third-party billing toggles from the child environment, and checks native authentication for a subscription before generation. Missing authentication fails with a login diagnostic. Intentional API billing uses the explicit anthropic provider. Administrator-managed policy remains effective.
 
-`generate ... --reference subject.png` and `run task.json --reference subject.png` accept one static noninterlaced RGB/RGBA8 PNG. Input and normalized PNG must each be at most 1 MB; 262144 pixels total, width/height at most 1024. Local decode checks CRCs and bounded inflated data, then re-encoding strips ancillary metadata. Codex receives `--image` with a fixed absolute `reference.png` path in the owned temporary directory. The file is removed with that directory after the child closes. Tool/shell restrictions are unchanged. Text in images is treated as untrusted reference data.
+Successful JSON result text and actual usage are extracted. Error, incomplete, multi-turn, permission-denied and server-tool-use envelopes fail. Missing counters are not guessed. Authentication is separate from generation: a failed sign-in check makes zero inference calls.
 
-The feature requires the native Codex `exec --image` flag (verified with 0.160.1); unsupported versions fail without fallback. Claude Code and API providers reject a supplied reference before transport or cache lookup. Text-only generation remains available for all four providers. No remote media is fetched by Formixel and task JSON cannot request image paths. See [reference workflow](REFERENCE_AUTHORING.md).
+## Optional APIs
 
-Reference cache keys include the normalized PNG SHA-256 and visual-reference instructions. Identical pixels moved to another path reuse source; changed pixels at the same path produce a new key. Filename/metadata alone do not select a different model. Reference bytes never enter the cache record. Local reference validation still runs on a cache hit. Images add provider context/tokens; use one cropped subject and keep usage counters separate from text-only runs. No visual fidelity score or automatic critique call is implied.
+OpenAI uses the official Responses endpoint, OPENAI_API_KEY, explicit model, instructions/input, max_output_tokens:8192 and store:false; completed output_text is extracted. See the [official text guide](https://developers.openai.com/api/docs/guides/text). Anthropic uses the official Messages endpoint, ANTHROPIC_API_KEY, API version 2023-06-01, explicit model/system/user messages and max_tokens:8192; end_turn text is extracted. See the [official Messages reference](https://platform.claude.com/docs/en/api/messages/create). Model access is account-specific. Tests and doctor make no live paid API request.
+
+## Usage, cache and testing
+
+Usage reports input/output totals and nullable cached-input/reasoning counts. Codex events, Claude JSON results and both APIs can supply them. Missing/malformed required counts return null, not zero. Anthropic/Claude input is the sum of reported uncached, cache-read and cache-creation buckets; cached input is the read bucket, following [documented accounting](https://platform.claude.com/docs/en/build-with-claude/prompt-caching). Token counts are not an account bill.
+
+Doctor reads native version/auth status or API key presence without generating or printing credentials/account bodies. Codex checks allow five seconds; Claude startup/auth checks allow fifteen. Authentication does not prove model access or output quality.
+
+Legacy generate/run opt-in caches still store only validated source under fingerprints. Cache hits validate locally and make zero provider calls; corrupt entries fail without a retry. Programmatic ProviderTransport injection is a trusted offline test hook, never a task-file transport override. See [provider testing](PROVIDER_TESTING.md) for actual evidence and remaining account gates.

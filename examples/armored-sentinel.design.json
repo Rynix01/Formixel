@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "source": "model \"Copperback Sentinel\"\n# Compact plated quadruped. Absolute coordinates; forward is negative Z.\ntexture 256 128\ngroup body origin [0,5,0] {\n  cube chassis [-2.15,4.25,-2.7] [4.3,2.6,5.4]\n  cube belly [-1.65,3.9,-2.2] [3.3,0.75,4.5]\n  cube collar [-1.85,5.1,-3.05] [3.7,1.25,0.7]\n  cube left_guard [-2.65,4.95,-2.3] [0.75,1.8,4.65]\n  cube right_guard [1.9,4.95,-2.3] [0.75,1.8,4.65]\n  cube shell_1 [-2.3,6.5,-2.4] [4.6,0.95,1.65]\n  cube shell_2 [-2.3,6.5,-0.65] [4.6,0.95,1.65]\n  cube shell_3 [-2.3,6.5,1.1] [4.6,0.95,1.65]\n  cube spine [-0.3,7.2,-1.95] [0.6,0.55,3.9]\n  group head origin [0,6.15,-2.7] {\n    cube skull [-1.65,5.45,-5.15] [3.3,2.45,2.75]\n    cube brow [-1.9,6.8,-5.3] [3.8,0.55,1.1]\n    cube muzzle [-1.2,5.8,-6.25] [2.4,0.95,1.5]\n    cube nose [-0.7,6.05,-6.48] [1.4,0.55,0.4]\n    cube left_cheek [-1.9,5.25,-4.7] [0.6,1.35,1.75]\n    cube left_eye [-1.58,6.35,-5.3] [0.38,0.36,0.12]\n    group left_ear origin [-1.2,7.5,-3.8] {\n      cube fin [-1.65,7.35,-4.15] [0.8,1.65,0.7] origin [-1.2,7.5,-3.8] rotate [8,0,12]\n    }\n    cube right_cheek [1.3,5.25,-4.7] [0.6,1.35,1.75]\n    cube right_eye [1.2,6.35,-5.3] [0.38,0.36,0.12]\n    group right_ear origin [1.2,7.5,-3.8] {\n      cube fin [0.85,7.35,-4.15] [0.8,1.65,0.7] origin [1.2,7.5,-3.8] rotate [-8,0,-12]\n    }\n    group jaw origin [0,5.65,-3.8] {\n      cube mandible [-1.25,4.9,-6.1] [2.5,0.65,2.5]\n      cube chin [-0.95,4.75,-6.13] [1.9,0.35,1.8]\n      cube left_fang [-0.95,5.45,-5.9] [0.3,0.65,0.35]\n      cube right_fang [0.65,5.45,-5.9] [0.3,0.65,0.35]\n    }\n  }\n  group tail origin [0,5.6,2.3] {\n    cube base [-0.9,5.15,2.15] [1.8,0.85,2.2]\n    group tip origin [0,5.55,4.1] {\n      cube segment [-0.65,5.05,3.95] [1.3,0.75,1.9]\n      cube cap [-0.8,5,5.3] [1.6,0.85,0.65]\n    }\n  }\n  group front_left origin [-2.2,5.05,-1.95] {\n    cube upper [-2.625,2.582009,-2.425] [0.85,2.547991,0.95] origin [-2.2,5.05,-1.95] rotate [-19.573126,0,0]\n    cube shoulder [-2.85,4.5,-2.6] [1.3,1.15,1.3]\n    group shin origin [-2.2,2.8,-1.15] {\n      cube lower [-2.55,0.189684,-1.55] [0.7,2.690316,0.8] origin [-2.2,2.8,-1.15] rotate [29.604451,0,0]\n      cube knee [-2.7,2.45,-1.65] [1,0.75,1]\n      group foot origin [-2.2,0.6,-2.4] {\n        cube sole [-2.85,0,-3.35] [1.3,0.65,1.8]\n        cube toe [-2.8,0.55,-3.35] [1.2,0.35,0.7]\n      }\n    }\n  }\n  group hind_left origin [-2.2,5.05,1.95] {\n    cube upper [-2.625,2.582009,1.475] [0.85,2.547991,0.95] origin [-2.2,5.05,1.95] rotate [19.573126,0,0]\n    cube shoulder [-2.85,4.5,1.3] [1.3,1.15,1.3]\n    group shin origin [-2.2,2.8,1.15] {\n      cube lower [-2.55,0.189684,0.75] [0.7,2.690316,0.8] origin [-2.2,2.8,1.15] rotate [-29.604451,0,0]\n      cube knee [-2.7,2.45,0.65] [1,0.75,1]\n      group foot origin [-2.2,0.6,2.4] {\n        cube sole [-2.85,0,1.45] [1.3,0.65,1.8]\n        cube toe [-2.8,0.55,1.45] [1.2,0.35,0.7]\n      }\n    }\n  }\n  group front_right origin [2.2,5.05,-1.95] {\n    cube upper [1.775,2.582009,-2.425] [0.85,2.547991,0.95] origin [2.2,5.05,-1.95] rotate [-19.573126,0,0]\n    cube shoulder [1.55,4.5,-2.6] [1.3,1.15,1.3]\n    group shin origin [2.2,2.8,-1.15] {\n      cube lower [1.85,0.189684,-1.55] [0.7,2.690316,0.8] origin [2.2,2.8,-1.15] rotate [29.604451,0,0]\n      cube knee [1.7,2.45,-1.65] [1,0.75,1]\n      group foot origin [2.2,0.6,-2.4] {\n        cube sole [1.55,0,-3.35] [1.3,0.65,1.8]\n        cube toe [1.6,0.55,-3.35] [1.2,0.35,0.7]\n      }\n    }\n  }\n  group hind_right origin [2.2,5.05,1.95] {\n    cube upper [1.775,2.582009,1.475] [0.85,2.547991,0.95] origin [2.2,5.05,1.95] rotate [19.573126,0,0]\n    cube shoulder [1.55,4.5,1.3] [1.3,1.15,1.3]\n    group shin origin [2.2,2.8,1.15] {\n      cube lower [1.85,0.189684,0.75] [0.7,2.690316,0.8] origin [2.2,2.8,1.15] rotate [-29.604451,0,0]\n      cube knee [1.7,2.45,0.65] [1,0.75,1]\n      group foot origin [2.2,0.6,2.4] {\n        cube sole [1.55,0,1.45] [1.3,0.65,1.8]\n        cube toe [1.6,0.55,1.45] [1.2,0.35,0.7]\n      }\n    }\n  }\n}\nanimation alert 2 loop {\n  rotate \"body/head\" 0 [0,0,0]\n  rotate \"body/head\" .5 [-4,-14,0]\n  rotate \"body/head\" 1 [0,12,0]\n  rotate \"body/head\" 1.5 [3,8,0]\n  rotate \"body/head\" 2 [0,0,0]\n  rotate \"body/head/jaw\" 0 [0,0,0]\n  rotate \"body/head/jaw\" .5 [-22,0,0]\n  rotate \"body/head/jaw\" .9 [-5,0,0]\n  rotate \"body/head/jaw\" 1.35 [-16,0,0]\n  rotate \"body/head/jaw\" 2 [0,0,0]\n  rotate \"body/head/left_ear\" 0 [0,0,0]\n  rotate \"body/head/left_ear\" .5 [0,0,-12]\n  rotate \"body/head/left_ear\" 1 [0,0,5]\n  rotate \"body/head/left_ear\" 2 [0,0,0]\n  rotate \"body/tail\" 0 [0,-8,0]\n  rotate \"body/tail\" .65 [0,16,0]\n  rotate \"body/tail\" 1.3 [0,-16,0]\n  rotate \"body/tail\" 2 [0,-8,0]\n  rotate \"body/tail/tip\" 0 [0,12,0]\n  rotate \"body/tail/tip\" .65 [0,-18,0]\n  rotate \"body/tail/tip\" 1.3 [0,18,0]\n  rotate \"body/tail/tip\" 2 [0,12,0]\n}\n",
+  "authoring": {
+    "atlas": {
+      "size": [256, 128],
+      "texelsPerUnit": 3,
+      "requireCoverage": true,
+      "recipes": [
+        {
+          "id": "underbody",
+          "kind": "scales",
+          "base": "#20333C",
+          "accent": "#486773",
+          "detail": 0.55,
+          "seed": 23
+        },
+        {
+          "id": "patina",
+          "kind": "metal",
+          "base": "#275D60",
+          "accent": "#72ABA1",
+          "detail": 0.7,
+          "seed": 17
+        },
+        {
+          "id": "copper",
+          "kind": "metal",
+          "base": "#A76A3A",
+          "accent": "#F2BF78",
+          "detail": 0.8,
+          "seed": 11
+        },
+        {
+          "id": "dark",
+          "kind": "solid",
+          "base": "#18242A",
+          "accent": "#18242A",
+          "detail": 0
+        },
+        {
+          "id": "amber",
+          "kind": "solid",
+          "base": "#FFD47A",
+          "accent": "#FFD47A",
+          "detail": 0
+        },
+        {
+          "id": "ivory",
+          "kind": "bone",
+          "base": "#D3C6A5",
+          "accent": "#FFF2CE",
+          "detail": 0.5,
+          "seed": 5
+        }
+      ],
+      "parts": [
+        {
+          "cubes": [
+            "body/chassis",
+            "body/head/muzzle",
+            "body/head/jaw/mandible",
+            "body/front_left/upper",
+            "body/hind_left/upper",
+            "body/front_right/upper",
+            "body/hind_right/upper"
+          ],
+          "recipe": "underbody"
+        },
+        {
+          "cubes": [
+            "body/belly",
+            "body/collar",
+            "body/spine",
+            "body/head/brow",
+            "body/head/left_cheek",
+            "body/head/left_ear/fin",
+            "body/head/right_cheek",
+            "body/head/right_ear/fin",
+            "body/head/jaw/chin",
+            "body/tail/tip/cap",
+            "body/front_left/shoulder",
+            "body/front_left/shin/knee",
+            "body/front_left/shin/foot/toe",
+            "body/hind_left/shoulder",
+            "body/hind_left/shin/knee",
+            "body/hind_left/shin/foot/toe",
+            "body/front_right/shoulder",
+            "body/front_right/shin/knee",
+            "body/front_right/shin/foot/toe",
+            "body/hind_right/shoulder",
+            "body/hind_right/shin/knee",
+            "body/hind_right/shin/foot/toe"
+          ],
+          "recipe": "copper"
+        },
+        {
+          "cubes": [
+            "body/left_guard",
+            "body/right_guard",
+            "body/shell_1",
+            "body/shell_2",
+            "body/shell_3",
+            "body/head/skull",
+            "body/tail/base",
+            "body/tail/tip/segment",
+            "body/front_left/shin/lower",
+            "body/hind_left/shin/lower",
+            "body/front_right/shin/lower",
+            "body/hind_right/shin/lower"
+          ],
+          "recipe": "patina",
+          "faces": {
+            "down": "underbody"
+          }
+        },
+        {
+          "cubes": [
+            "body/head/nose",
+            "body/front_left/shin/foot/sole",
+            "body/hind_left/shin/foot/sole",
+            "body/front_right/shin/foot/sole",
+            "body/hind_right/shin/foot/sole"
+          ],
+          "recipe": "dark"
+        },
+        {
+          "cubes": ["body/head/left_eye", "body/head/right_eye"],
+          "recipe": "amber"
+        },
+        {
+          "cubes": ["body/head/jaw/left_fang", "body/head/jaw/right_fang"],
+          "recipe": "ivory"
+        }
+      ]
+    },
+    "roles": {
+      "body": "body",
+      "head": "body/head",
+      "limbs": [
+        {
+          "id": "front_left",
+          "kind": "leg",
+          "upper": "body/front_left",
+          "lower": "body/front_left/shin",
+          "end": "body/front_left/shin/foot",
+          "sole": {
+            "cube": "body/front_left/shin/foot/sole",
+            "face": "down"
+          },
+          "bendPole": [-2.2, 2.8, 2]
+        },
+        {
+          "id": "hind_left",
+          "kind": "leg",
+          "upper": "body/hind_left",
+          "lower": "body/hind_left/shin",
+          "end": "body/hind_left/shin/foot",
+          "sole": {
+            "cube": "body/hind_left/shin/foot/sole",
+            "face": "down"
+          },
+          "bendPole": [-2.2, 2.8, -2]
+        },
+        {
+          "id": "front_right",
+          "kind": "leg",
+          "upper": "body/front_right",
+          "lower": "body/front_right/shin",
+          "end": "body/front_right/shin/foot",
+          "sole": {
+            "cube": "body/front_right/shin/foot/sole",
+            "face": "down"
+          },
+          "bendPole": [2.2, 2.8, 2]
+        },
+        {
+          "id": "hind_right",
+          "kind": "leg",
+          "upper": "body/hind_right",
+          "lower": "body/hind_right/shin",
+          "end": "body/hind_right/shin/foot",
+          "sole": {
+            "cube": "body/hind_right/shin/foot/sole",
+            "face": "down"
+          },
+          "bendPole": [2.2, 2.8, -2]
+        }
+      ]
+    },
+    "constraints": [
+      {
+        "id": "floor_all_cuboids",
+        "type": "ground",
+        "cubes": [
+          "body/chassis",
+          "body/belly",
+          "body/collar",
+          "body/left_guard",
+          "body/right_guard",
+          "body/shell_1",
+          "body/shell_2",
+          "body/shell_3",
+          "body/spine",
+          "body/head/skull",
+          "body/head/brow",
+          "body/head/muzzle",
+          "body/head/nose",
+          "body/head/left_cheek",
+          "body/head/left_eye",
+          "body/head/left_ear/fin",
+          "body/head/right_cheek",
+          "body/head/right_eye",
+          "body/head/right_ear/fin",
+          "body/head/jaw/mandible",
+          "body/head/jaw/chin",
+          "body/head/jaw/left_fang",
+          "body/head/jaw/right_fang",
+          "body/tail/base",
+          "body/tail/tip/segment",
+          "body/tail/tip/cap",
+          "body/front_left/upper",
+          "body/front_left/shoulder",
+          "body/front_left/shin/lower",
+          "body/front_left/shin/knee",
+          "body/front_left/shin/foot/sole",
+          "body/front_left/shin/foot/toe",
+          "body/hind_left/upper",
+          "body/hind_left/shoulder",
+          "body/hind_left/shin/lower",
+          "body/hind_left/shin/knee",
+          "body/hind_left/shin/foot/sole",
+          "body/hind_left/shin/foot/toe",
+          "body/front_right/upper",
+          "body/front_right/shoulder",
+          "body/front_right/shin/lower",
+          "body/front_right/shin/knee",
+          "body/front_right/shin/foot/sole",
+          "body/front_right/shin/foot/toe",
+          "body/hind_right/upper",
+          "body/hind_right/shoulder",
+          "body/hind_right/shin/lower",
+          "body/hind_right/shin/knee",
+          "body/hind_right/shin/foot/sole",
+          "body/hind_right/shin/foot/toe"
+        ],
+        "floor": 0,
+        "tolerance": 0.001
+      },
+      {
+        "id": "front_left_plant",
+        "type": "contact",
+        "marker": {
+          "group": "body/front_left/shin/foot",
+          "point": [-2.2, 0, -2.4]
+        },
+        "floor": 0,
+        "tolerance": 0.001,
+        "lockXZ": [-2.2, -2.4]
+      },
+      {
+        "id": "front_left_sole_normal",
+        "type": "level",
+        "a": {
+          "group": "body/front_left/shin/foot",
+          "point": [-2.2, 0, -2.4]
+        },
+        "b": {
+          "group": "body/front_left/shin/foot",
+          "point": [-2.2, 1, -2.4]
+        },
+        "axis": [0, 1, 0],
+        "maxDegrees": 0.01
+      },
+      {
+        "id": "front_left_bend",
+        "type": "bend",
+        "root": {
+          "group": "body/front_left",
+          "point": [-2.2, 5.05, -1.95]
+        },
+        "joint": {
+          "group": "body/front_left/shin",
+          "point": [-2.2, 2.8, -1.15]
+        },
+        "end": {
+          "group": "body/front_left/shin/foot",
+          "point": [-2.2, 0.6, -2.4]
+        },
+        "pole": [-2.2, 2.8, 2],
+        "minDot": 0.9
+      },
+      {
+        "id": "hind_left_plant",
+        "type": "contact",
+        "marker": {
+          "group": "body/hind_left/shin/foot",
+          "point": [-2.2, 0, 2.4]
+        },
+        "floor": 0,
+        "tolerance": 0.001,
+        "lockXZ": [-2.2, 2.4]
+      },
+      {
+        "id": "hind_left_sole_normal",
+        "type": "level",
+        "a": {
+          "group": "body/hind_left/shin/foot",
+          "point": [-2.2, 0, 2.4]
+        },
+        "b": {
+          "group": "body/hind_left/shin/foot",
+          "point": [-2.2, 1, 2.4]
+        },
+        "axis": [0, 1, 0],
+        "maxDegrees": 0.01
+      },
+      {
+        "id": "hind_left_bend",
+        "type": "bend",
+        "root": {
+          "group": "body/hind_left",
+          "point": [-2.2, 5.05, 1.95]
+        },
+        "joint": {
+          "group": "body/hind_left/shin",
+          "point": [-2.2, 2.8, 1.15]
+        },
+        "end": {
+          "group": "body/hind_left/shin/foot",
+          "point": [-2.2, 0.6, 2.4]
+        },
+        "pole": [-2.2, 2.8, -2],
+        "minDot": 0.9
+      },
+      {
+        "id": "front_right_plant",
+        "type": "contact",
+        "marker": {
+          "group": "body/front_right/shin/foot",
+          "point": [2.2, 0, -2.4]
+        },
+        "floor": 0,
+        "tolerance": 0.001,
+        "lockXZ": [2.2, -2.4]
+      },
+      {
+        "id": "front_right_sole_normal",
+        "type": "level",
+        "a": {
+          "group": "body/front_right/shin/foot",
+          "point": [2.2, 0, -2.4]
+        },
+        "b": {
+          "group": "body/front_right/shin/foot",
+          "point": [2.2, 1, -2.4]
+        },
+        "axis": [0, 1, 0],
+        "maxDegrees": 0.01
+      },
+      {
+        "id": "front_right_bend",
+        "type": "bend",
+        "root": {
+          "group": "body/front_right",
+          "point": [2.2, 5.05, -1.95]
+        },
+        "joint": {
+          "group": "body/front_right/shin",
+          "point": [2.2, 2.8, -1.15]
+        },
+        "end": {
+          "group": "body/front_right/shin/foot",
+          "point": [2.2, 0.6, -2.4]
+        },
+        "pole": [2.2, 2.8, 2],
+        "minDot": 0.9
+      },
+      {
+        "id": "hind_right_plant",
+        "type": "contact",
+        "marker": {
+          "group": "body/hind_right/shin/foot",
+          "point": [2.2, 0, 2.4]
+        },
+        "floor": 0,
+        "tolerance": 0.001,
+        "lockXZ": [2.2, 2.4]
+      },
+      {
+        "id": "hind_right_sole_normal",
+        "type": "level",
+        "a": {
+          "group": "body/hind_right/shin/foot",
+          "point": [2.2, 0, 2.4]
+        },
+        "b": {
+          "group": "body/hind_right/shin/foot",
+          "point": [2.2, 1, 2.4]
+        },
+        "axis": [0, 1, 0],
+        "maxDegrees": 0.01
+      },
+      {
+        "id": "hind_right_bend",
+        "type": "bend",
+        "root": {
+          "group": "body/hind_right",
+          "point": [2.2, 5.05, 1.95]
+        },
+        "joint": {
+          "group": "body/hind_right/shin",
+          "point": [2.2, 2.8, 1.15]
+        },
+        "end": {
+          "group": "body/hind_right/shin/foot",
+          "point": [2.2, 0.6, 2.4]
+        },
+        "pole": [2.2, 2.8, -2],
+        "minDot": 0.9
+      },
+      {
+        "id": "jaw_hinge",
+        "type": "attachment",
+        "a": {
+          "group": "body/head",
+          "point": [0, 5.65, -3.8]
+        },
+        "b": {
+          "group": "body/head/jaw",
+          "point": [0, 5.65, -3.8]
+        },
+        "maxDistance": 0.001
+      }
+    ]
+  }
+}
